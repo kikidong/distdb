@@ -1,0 +1,41 @@
+
+[global]
+
+nodes_file =  @NODES_FILE@
+
+nodes_url =  @NODES_URL@ 
+
+[server]
+
+#listen = 0.0.0.0:3721
+
+#maxconnection = 200
+
+[client]
+
+#maxconnection = 200
+
+## here you can choose what backend to use
+#backend = sqlite
+#backend = oci
+#backend = mysql
+
+[rpc]
+
+#listen = 127.0.0.1:3722
+
+[sqlite]
+
+#db = @localstatedir@/distdb.sqlite
+
+[mysql]
+
+#server = localhost
+#username = root
+#password =  
+
+[oci]
+
+#server = localhost
+#username = root
+#password =  

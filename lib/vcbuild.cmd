@@ -1,0 +1,3 @@
+CC=cl
+CFLAGS=/D_WIN32
+

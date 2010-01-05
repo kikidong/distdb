@@ -1,0 +1,45 @@
+本项目完全抛弃C++,改而使用非常传统的C语言进行开发
+喜欢C++的同事表喷我哦
+
+distdb 数据库导出RPC :
+
+int distdb_rpc_server_info(int whatinfo,...);
+int distdb_rpc_get_connected_peers(struct distdb_nodes*,int * );
+int distdb_rpc_force_connect_peer(struct distdb_nodes* peer);
+int distdb_rpc_force_disconnect_peer(struct distdb_nodes* peer);
+int distdb_rpc_force_restart();
+
+
+int distdb_rpc_execute_sql_bin(struct DISTDB_SQL_RESULT ** out,const char *,size_t length,int executeflag);
+
+//可以不用等全部的结果出来。 :)
+int distdb_rpc_wait_result(struct DISTDB_SQL_RESULT *,int waitflag);
+int distdb_rpc_fetch_result(struct DISTDB_SQL_RESULT *,char * result[]);
+int distdb_rpc_seek_result(struct DISTDB_SQL_RESULT *, int skip );
+int distdb_rpc_free_result(struct DISTDB_SQL_RESULT *);
+int distdb_rpc_result_info(struct DISTDB_SQL_RESULT *,int whatinfo , ... );
+
+distdb 的RPC包裹库导出如下函数 (libdistdb.so(Linux) / distdb.dll(WIN32))
+
+//connect to distdb rpc server. PASS NULL default to localhost
+int distdb_rpc_connectto(const char * rpc_server); 
+int distdb_rpc_disconnect();
+int distdb_rpc_server_info(int whatinfo,...);
+const char * distdb_version();
+
+int distdb_rpc_get_connected_peers(struct distdb_nodes*,int * );
+int distdb_rpc_force_connect_peer(struct distdb_nodes* peer);
+int distdb_rpc_force_disconnect_peer(struct distdb_nodes* peer);
+int distdb_rpc_force_restart();
+
+int distdb_rpc_execute_sql_str(struct DISTDB_SQL_RESULT ** out,const char *, int executeflag);
+int distdb_rpc_execute_sql_bin(struct DISTDB_SQL_RESULT ** out,const char *,size_t length,int executeflag);
+
+//可以不用等全部的结果出来。 :)
+int distdb_rpc_wait_result(struct DISTDB_SQL_RESULT *,int waitflag);
+int distdb_rpc_fetch_result(struct DISTDB_SQL_RESULT *,char * result[]);
+int distdb_rpc_seek_result(struct DISTDB_SQL_RESULT *, int skip );
+int distdb_rpc_free_result(struct DISTDB_SQL_RESULT *);
+int distdb_rpc_result_info(struct DISTDB_SQL_RESULT *,int whatinfo , ... );
+
+
