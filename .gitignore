@@ -21,3 +21,4 @@ libtool
 *.la
 *.lo
 distdb
+distdb.ini
