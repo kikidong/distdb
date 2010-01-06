@@ -5,6 +5,11 @@ nodes_file =  @NODES_FILE@
 
 nodes_url =  @NODES_URL@ 
 
+## here you can choose what backend to use
+#backend = sqlite
+#backend = oci
+#backend = mysql
+
 [server]
 
 #listen = 0.0.0.0:3721
@@ -15,10 +20,7 @@ nodes_url =  @NODES_URL@
 
 #maxconnection = 200
 
-## here you can choose what backend to use
-#backend = sqlite
-#backend = oci
-#backend = mysql
+
 
 [rpc]
 

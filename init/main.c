@@ -27,7 +27,7 @@
 #include <string.h>
 #include <dlfcn.h>
 
-#include "inifile.h"
+#include "../include/inifile.h"
 #include "prase.h"
 
 #include "../include/nodes.h"
@@ -164,6 +164,7 @@ int main(int argc,char*argv[],char*env[])
 		printf("unable to read %s\n",cfg_progs.startup_node_file);
 		exit(EXIT_FAILURE);
 	}
+	load_plugins(config_file);
 
 	//listen on local address and connect to nodes
 	connect_nodes();

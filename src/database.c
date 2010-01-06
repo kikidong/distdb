@@ -22,11 +22,13 @@
 #include "config.h"
 #endif
 
+#include <limits.h>
 #include <dlfcn.h>
 
 #define __DISTDB_SERVER_SIDE_H
 #include "../include/global_var.h"
 #include "../include/distdb.h"
+#include "../include/inifile.h"
 
 struct DISTDB_SQL_RESULT{
 	time_t	time;	// The time that request the execution
@@ -39,24 +41,39 @@ struct DISTDB_SQL_RESULT{
 };
 
 static LIST_SLOT_DEFINE(results);
-static void* dbplugin;
 
 extern void * getbase()
 {
 	return &db;
 }
 
-int	load_plugins(FILE*configfile)
+int	load_plugins(const char * configfile)
 {
 //	dbplugin = dlopen("sqlite.so",RTLD_NOW);
-	dbplugin =
-		dlopen("/home/cai/workspace/distdb/build/db/sqlite.so",RTLD_NOW);
 
+	FILE *cf = fopen(configfile,"r");
+	if(!cf)
+	{
+		return -1;
+	}
+
+	char backend[128] = "sqlite";
+	void * dbplugin;
+	char * so_file;
+
+	get_profile_string(cf,"global","backend",backend,sizeof(backend));
+
+	so_file = strdup(PLUINGDIR);
+	so_file = realloc(so_file,strlen(so_file)+ strlen(backend) + 1 );
+	dbplugin = dlopen(so_file, RTLD_NOW);
+	free(so_file);
 	if(!dbplugin)
 	{
 		fprintf(stderr,dlerror());
+		close(cf);
 		return -1;
 	}
+	close(cf);
 	return 0;
 }
 

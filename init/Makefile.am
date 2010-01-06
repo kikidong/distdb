@@ -1,4 +1,4 @@
 
 
 
-EXTRTA_DIST = main.c inifile.c inifile.h gennodes.c prase.h prase.c
+EXTRTA_DIST = main.c inifile.c gennodes.c prase.h prase.c

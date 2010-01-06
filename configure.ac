@@ -125,6 +125,10 @@ AS_IF( [ test "${localstatedir}" = '$'"{prefix}/var"],[localstatedir=/var])
 
 AS_IF( [ test "${sysconfdir}" = '$'"{prefix}/etc"],[sysconfdir=/etc])
 
+AS_IF( [ test "${libdir}" = '$'"{exec_prefix}/lib" ], [
+	AS_IF( [test "${prefix}" = "NONE"], [libdir=/usr/local/lib] , [libdir=${prefix}/lib]   )
+	] )
+
 AC_SUBST(NODES_FILE,[${localstatedir}/distdb/nodes.db])
 AC_SUBST(NODES_URL,[${with_nodes_url}])
 LIB_VERSION_MAJOR=0
@@ -133,6 +137,8 @@ LIB_VERSION_CURRENT=1
 AC_SUBST(LIB_VERSION,"${LIB_VERSION_MAJOR}:${LIB_VERSION_CURRENT}:${LIB_VERSION_MINOR}")
 AC_DEFINE(RPC_DEFAULT_PORT,3721,[default port])
 AC_DEFINE(DISTDB_DEFAULT_PORT,3722,[default port])
+
+AC_DEFINE_UNQUOTED(PLUINGDIR,"${libdir}/distdb",[The dir that hold plugin])
 
 #OUTPUT files
 AC_CONFIG_FILES([				 
