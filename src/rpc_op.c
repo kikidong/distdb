@@ -26,7 +26,7 @@
 
 #include "../include/global_var.h"
 #include "../include/distdb.h"
-#include "../include/packet.h"
+#include "../include/rpc.h"
 
 int open_rpc_socket()
 {

@@ -22,19 +22,11 @@
 #include "config.h"
 #endif
 
-#define __DISTDB_SERVER_SIDE_H
+#include <dlfcn.h>
 
+#define __DISTDB_SERVER_SIDE_H
 #include "../include/global_var.h"
 #include "../include/distdb.h"
-
-
-struct the_db_ops{
-	int (*db_exec_sql)(void ** db_private_ptr,const char*,int len);
-	int (*db_get_result)(void*	db_private_ptr);
-	int (*db_fetch_row)(void*	db_private_ptr,char **);
-	int (*db_free_result)(void*	db_private_ptr);
-}db;
-
 
 struct DISTDB_SQL_RESULT{
 	time_t	time;	// The time that request the execution
@@ -47,9 +39,30 @@ struct DISTDB_SQL_RESULT{
 };
 
 static LIST_SLOT_DEFINE(results);
+static void* dbplugin;
+
+extern void * getbase()
+{
+	return &db;
+}
+
+int	load_plugins(FILE*configfile)
+{
+//	dbplugin = dlopen("sqlite.so",RTLD_NOW);
+	dbplugin =
+		dlopen("/home/cai/workspace/distdb/build/db/sqlite.so",RTLD_NOW);
+
+	if(!dbplugin)
+	{
+		fprintf(stderr,dlerror());
+		return -1;
+	}
+	return 0;
+}
 
 int opendb()
 {
+
 	return 0;
 }
 
@@ -86,3 +99,5 @@ int distdb_rpc_free_result(struct DISTDB_SQL_RESULT * p)
 	db.db_free_result(p->db_private_ptr);
 	free(p);
 }
+
+

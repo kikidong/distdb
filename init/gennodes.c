@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <pthread.h>
 #include <sys/socket.h>
 
 #include "../include/nodes.h"
@@ -82,7 +83,7 @@ int check_node_file(const char * szfile)
 static int nodesscanf( const char* line , void * ptr)
 {
 	int		s1,s2,s3,s4 ,port;
-	struct nodes * new_node = newnode();
+	struct nodes * new_node = nodes_new();
 
 	switch(sscanf(line, "%d.%d.%d.%d:%d", &s1, &s2, &s3, &s4, &port))
 	{
@@ -253,14 +254,49 @@ static int connect_peer(struct nodes * node)
 	LIST_DELETE_AT(&node->unconnectedlist);
 	node->refcount --;
 }
+static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER ;
 
-void * accepts(void* null)
+static void * accepts(void* null)
 {
+	struct	list_node* n;
 	struct sockaddr_in addr = {0};
 	socklen_t	addr_len = INET_ADDRSTRLEN;
-	while (accept(g_socket,(struct sockaddr *) & addr,&addr_len))
+	int sock_peer;
+	int a=0;
+	while (sock_peer = accept(g_socket,(struct sockaddr *) & addr,&addr_len))
 	{
-		//
+		//lock
+		pthread_mutex_lock(&lock);
+		//look up the same peer node
+		for(n = node_connectedlist.head ; n != node_connectedlist.tail->next ;  n = n->next)
+		{
+			if(SAME_PEER(&addr,&(LIST_HEAD(n,nodes,connectedlist)->peer)))
+				{
+					LIST_HEAD(n,nodes,connectedlist)->peer = addr;
+					close(LIST_HEAD(n,nodes,connectedlist)->sock_peer);
+					LIST_HEAD(n,nodes,connectedlist)->sock_peer= sock_peer;
+					a = 1;
+				}
+		}
+		//if not found in connectedlist, look in the unconnectedlist
+		if(!a)
+		{
+			for(n = node_unconnectedlist.head ; n != node_unconnectedlist.tail->next ;  n = n->next)
+			{
+				if (SAME_PEER(&addr, &(LIST_HEAD(n,nodes,unconnectedlist)->peer)))
+				{
+					LIST_DELETE_AT(n);
+					LIST_ADDTOTAIL(&node_connectedlist,n);
+					LIST_HEAD(n,nodes,unconnectedlist)->peer = addr;
+					LIST_HEAD(n,nodes,unconnectedlist)->sock_peer = sock_peer;
+					a = 2;
+				}
+			}
+		}
+		pthread_mutex_unlock(&lock);
+		//if not found in both place
+		write(sock_peer,"Permission denied\n",18,MSG_DONTWAIT);
+		close(sock_peer);
 	}
 	return 0;
 }
@@ -286,7 +322,11 @@ int connect_nodes()
 
 	for (n = node_unconnectedlist.head ; n  != node_unconnectedlist.tail->next  ; n = n->next)
 	{
-		connect_peer(LIST_HEAD(n,nodes,unconnectedlist));
+		pthread_mutex_lock(&lock);
+		if(! LIST_HEAD(n,nodes,unconnectedlist)->sock_peer) // only connect unconnected.
+			connect_peer(LIST_HEAD(n,nodes,unconnectedlist));
+		//else n has been off link. Thank good ness, the n->next still works
+		pthread_mutex_unlock(&lock);
 	}
 	return 0;
 }

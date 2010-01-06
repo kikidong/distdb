@@ -1,36 +1,42 @@
 /*
- * sqlite.c
+ * Copyright (C) 2009-2010 Kingstone, ltd
  *
- *  Created on: 2010-1-2
- *      Author: cai
+ * Written by microcai in 2009-2010
+ *
+ * This software is lisenced under the Kingstone mid-ware Lisence.
+ *
+ * For more infomation see COPYING file shipped with this software.
+ *
+ * If you have any question with this software, please contract microcai, the
+ * original writer of this software.
+ *
+ * If you have any question with law suite, please contract 黄小克, the owner of
+ * this company.
+ *
  */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
-
+#include <fcntl.h>
 #include <sqlite3.h>
 #include "../init/inifile.h"
 #include "../include/distdb.h"
+#include "../include/global_var.h"
 
-int onload()
+int main(int argc,char* argv[])
 {
-//	sqlite3_open()
-	printf("called\n");
-	char v[200];
- 	get_profile_string(0,0,"sqlite",v,200);
-	return 0;
-}
-
-int main()
-{
-	printf("loaded!");
-
+	printf("=============================================================\n");
+	printf("%s -- The SQLite backend for distdb Version:%s\n",argc?argv[0]:"sqlite.so",VERSION);
+	printf("Copyright (C) 2009-2010 Kingstone, Ltd. All rights reserved\n");
+	printf("Written by %s\n",AUTHOR);
+	printf("For more infomation see COPYING file shipped with this software.\n");
+	printf("=============================================================\n");
 }
 
 static char * dbfile;
-static sqlite3	* db;
+static sqlite3	* pdb;
 
 
 /*
@@ -38,7 +44,7 @@ static sqlite3	* db;
  */
 int opendb()
 {
-	return sqlite3_open(dbfile,&db);
+	return sqlite3_open(dbfile,&pdb);
 }
 
 /*
@@ -53,9 +59,26 @@ int checkdb(char * tables[])
 /*
  * 执行 sql 语句
  */
-int execsql(const char * sql,int byte)
+int execsql(void**out,const char * sql,int byte)
 {
 	const char * tail;
 	sqlite3_stmt* stml;
-	sqlite3_prepare_v2(db,sql,byte,&stml,&tail);
+	sqlite3_prepare_v2(pdb,sql,byte,&stml,&tail);
+	*out = stml;
+}
+
+
+void __init()
+{
+	printf(":P\n");
+//	get_profile_string(0,0,0,0,0);
+	struct db_ops * getbase();
+	struct db_ops * db = getbase();
+
+	db->db_exec_sql = execsql;
+//	db->db_fetch_row =
+
+	printf("%p\n",db);
+	printf(":D\n");
+	return;
 }

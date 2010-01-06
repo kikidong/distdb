@@ -34,3 +34,5 @@ LIST_SLOT_DEFINE(node_connectedlist);
 
 int				  groupcount;
 struct _groupmap *groupmap;
+
+struct db_ops db;

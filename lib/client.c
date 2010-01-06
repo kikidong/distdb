@@ -21,12 +21,8 @@
 #include "./vcconfig.h"
 #endif
 
-#ifdef _WIN32
-#include <windows.h>
-#endif
-
 #include "../include/distdb.h"
-#include "../include/packet.h"
+#include "../include/rpc.h"
 
 static int rpc_socket = -1 ;
 static struct sockaddr_in server_addr = {0};
@@ -64,13 +60,17 @@ int distdb_rpc_disconnect()
 
 int distdb_rpc_execute_sql_bin(struct DISTDB_SQL_RESULT ** out,const char *sql,size_t length,int executeflag)
 {
+	struct rpc_packet_call * buff = malloc(sizeof(struct rpc_packet_call) + length );
+
+	buff->rpc_call_id =
+
 	sendto(rpc_socket,0,0,0,(struct sockaddr*)&server_addr,INET_ADDRSTRLEN);
 
 }
 
 int distdb_rpc_execute_sql_str(struct DISTDB_SQL_RESULT ** out,const char *sql,int executeflag)
 {
-
+	return distdb_rpc_execute_sql_bin(out,sql,strlen(sql) +1 ,executeflag);
 }
 
 int main()

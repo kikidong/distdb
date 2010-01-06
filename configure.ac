@@ -5,6 +5,7 @@ AC_INIT([distdb], [0.0.1], [microcai@fedoraproject.org])
 AC_CONFIG_SRCDIR([init/main.c])
 AC_CONFIG_HEADERS([config.h])
 
+AC_DEFINE(AUTHOR,"microcai",[Author of this software])
 AM_INIT_AUTOMAKE([-Wall -Werror])
 # Checks for programs.
 AC_PROG_CC
@@ -47,7 +48,7 @@ AC_ARG_WITH([mysql],
 #Check for ENABLE
 AC_ARG_ENABLE([debug],[AC_HELP_STRING([--enable-debug],[enable debug])],
 		[
-			CFLAGS="-O0 -g3 -fPIC"
+			CFLAGS="-O0 -g3"
 			AC_DEFINE(DEBUG,1,[defined if in debug mode])
 		])
 

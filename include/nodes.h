@@ -44,12 +44,17 @@ struct nodes{
  	DEFINE_LIST(grouplist); // linked list that binds same group together.
 };
 
-static inline struct nodes * newnode()
+static inline struct nodes * nodes_new()
 {
 	struct nodes * ret = (typeof(ret))malloc(sizeof(*ret));
 	memset(ret,0,sizeof(*ret));
 	ret->freeer = free;
 	return ret;
+}
+
+static inline int SAME_PEER(struct sockaddr_in	*peer1,struct sockaddr_in *	peer2)
+{
+	return peer1->sin_addr.s_addr == peer2->sin_addr.s_addr;
 }
 
 __END_DECLS

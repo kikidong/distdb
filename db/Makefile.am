@@ -1,4 +1,5 @@
-AM_CFLAGS = -fPIC -pie -Wl,--unresolved-symbols=ignore-all,--export-dynamic
+AM_CFLAGS = -fPIC -pie
+AM_LDFLAGS = -Wl,--unresolved-symbols=ignore-all,--export-dynamic,-init,__init,-z,nodelete
 
 libexecdir=$(libdir)/distdb
 
