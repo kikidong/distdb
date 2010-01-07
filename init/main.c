@@ -164,6 +164,7 @@ int main(int argc,char*argv[],char*env[])
 		printf("unable to read %s\n",cfg_progs.startup_node_file);
 		exit(EXIT_FAILURE);
 	}
+
 	load_plugins(config_file);
 
 	//listen on local address and connect to nodes

@@ -20,10 +20,12 @@ struct _groupmap{
 };
 
 struct db_ops{
+	int (*db_open)();
 	int (*db_exec_sql)(void ** db_private_ptr,const char*,int len);
 	int (*db_get_result)(void*	db_private_ptr);
 	int (*db_fetch_row)(void*	db_private_ptr,char **);
 	int (*db_free_result)(void*	db_private_ptr);
+	int (*db_close)();
 };
 
 LIST_SLOT_DECLARE(nodelist);

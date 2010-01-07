@@ -38,6 +38,12 @@ int main(int argc,char* argv[])
 static char * dbfile;
 static sqlite3	* pdb;
 
+struct sqlite{
+	char ** result;
+	int row;
+	int col;
+	int current;
+};
 
 /*
  * Open database
@@ -59,26 +65,91 @@ int checkdb(char * tables[])
 /*
  * 执行 sql 语句
  */
-int execsql(void**out,const char * sql,int byte)
+static int execsql(void**out,const char * sql,int byte)
 {
-	const char * tail;
-	sqlite3_stmt* stml;
-	sqlite3_prepare_v2(pdb,sql,byte,&stml,&tail);
-	*out = stml;
+	char * errmsg;
+	char ** result;
+	int col;
+	int row;
+	struct sqlite	* forout;
+
+	forout = NULL;
+
+	if (sqlite3_get_table(pdb, sql, &result, &row, &col, &errmsg) == SQLITE_OK)
+	{
+		forout = malloc(sizeof(struct sqlite));
+		forout->result = result;
+		forout->col = col;
+		forout->row = row;
+		forout->current = 1;
+	}
+	if(errmsg)
+	{
+		sqlite3_free(errmsg);
+	}
+	*out = forout;
+	if(forout)
+		return 0;
+	return -1;
 }
 
+static int get_result(void * ptr)
+{
+	return sqlite3_step((sqlite3_stmt*)ptr);
+}
+
+static int fetch_row(void* ptr,char** reslut)
+{
+	int i;
+	struct sqlite * sp = (struct sqlite*) ptr;
+
+	if( sp->current > sp->row)
+		return -1;
+
+	for(i=0;i<sp->col;i++)
+	{
+		strcpy(reslut[i],sp->result[sp->current*sp->col + i ]);
+	}
+	sp->current ++;
+	return 0;
+}
+
+static int free_reslut(void*ptr)
+{
+	struct sqlite * sp = (struct sqlite*) ptr;
+	sqlite3_free_table(sp->result);
+	return 0;
+}
 
 void __init()
 {
 	printf(":P\n");
 //	get_profile_string(0,0,0,0,0);
-	struct db_ops * getbase();
-	struct db_ops * db = getbase();
+
+	/*
+	 * Can't use global var, or it will failed to start
+	 * when execute as separate program
+	 */
+	extern void * getbase();
+
+	struct {
+		struct db_ops *pdb;
+		FILE ** file;
+	} * base = getbase();
+
+	struct db_ops * db = base->pdb;
+
+	FILE * cf = *base->file;
 
 	db->db_exec_sql = execsql;
-//	db->db_fetch_row =
 
-	printf("%p\n",db);
-	printf(":D\n");
+	db->db_get_result = get_result;
+
+	db->db_fetch_row = fetch_row;
+
+	db->db_free_result = free_reslut;
+
+	printf("sqlite backend loaded");
+	sqlite3_initialize();
 	return;
 }

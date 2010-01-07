@@ -41,17 +41,22 @@ struct DISTDB_SQL_RESULT{
 };
 
 static LIST_SLOT_DEFINE(results);
+static FILE * cf;
 
 extern void * getbase()
 {
-	return &db;
+	static struct {
+		struct db_ops *pdb;
+		FILE ** file;
+	}ret={&db,&cf};
+	return &ret;
 }
 
 int	load_plugins(const char * configfile)
 {
 //	dbplugin = dlopen("sqlite.so",RTLD_NOW);
 
-	FILE *cf = fopen(configfile,"r");
+	cf = fopen(configfile,"r");
 	if(!cf)
 	{
 		return -1;
