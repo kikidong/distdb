@@ -1,19 +1,14 @@
 
 /* main - main file
  *
- * Copyright (C) 2009-2010 Kingstone, ltd
+ * Copyright (C) 2009-2010 microcai
  *
- * Written by microcai in 2009-2010
- *
- * This software is lisenced under the Kingstone mid-ware Lisence.
+ * This software is Public Domain
  *
  * For more infomation see COPYING file shipped with this software.
  *
  * If you have any question with this software, please contract microcai, the
  * original writer of this software.
- *
- * If you have any question with law suite, please contract 黄小克, the owner of
- * this company.
  *
  */
 
@@ -145,7 +140,6 @@ static int download_node_file(const char * url,const char * file, int reason)
 	return reason;
 }
 
-//extern int _start(){	syscall1(0);	_exit(0);}
 
 int main(int argc,char*argv[],char*env[])
 {
@@ -164,6 +158,7 @@ int main(int argc,char*argv[],char*env[])
 		printf("unable to read %s\n",cfg_progs.startup_node_file);
 		exit(EXIT_FAILURE);
 	}
+	load_plugins(config_file);
 
 	load_plugins(config_file);
 

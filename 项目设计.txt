@@ -9,7 +9,6 @@ int distdb_rpc_force_connect_peer(struct distdb_nodes* peer);
 int distdb_rpc_force_disconnect_peer(struct distdb_nodes* peer);
 int distdb_rpc_force_restart();
 
-
 int distdb_rpc_execute_sql_bin(struct DISTDB_SQL_RESULT ** out,const char *,size_t length,int executeflag);
 
 //可以不用等全部的结果出来。 :)

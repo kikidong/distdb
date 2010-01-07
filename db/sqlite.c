@@ -1,19 +1,15 @@
 /*
- * Copyright (C) 2009-2010 Kingstone, ltd
+ * Copyright (C) 2009-2010 microcai
  *
- * Written by microcai in 2009-2010
- *
- * This software is lisenced under the Kingstone mid-ware Lisence.
+ * This software is Public Domain
  *
  * For more infomation see COPYING file shipped with this software.
  *
  * If you have any question with this software, please contract microcai, the
  * original writer of this software.
  *
- * If you have any question with law suite, please contract 黄小克, the owner of
- * this company.
- *
  */
+
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -29,6 +25,8 @@ int main(int argc,char* argv[])
 {
 	printf("=============================================================\n");
 	printf("%s -- The SQLite backend for distdb Version:%s\n",argc?argv[0]:"sqlite.so",VERSION);
+	printf("Copyright (C) 2009-2010 microcai. All rights reserved\n");
+ 	printf("For more infomation see COPYING file shipped with this software.\n");
 	printf("Copyright (C) 2009-2010 Kingstone, Ltd. All rights reserved\n");
 	printf("Written by %s\n",AUTHOR);
 	printf("For more infomation see COPYING file shipped with this software.\n");
@@ -124,8 +122,6 @@ static int free_reslut(void*ptr)
 void __init()
 {
 	printf(":P\n");
-//	get_profile_string(0,0,0,0,0);
-
 	/*
 	 * Can't use global var, or it will failed to start
 	 * when execute as separate program

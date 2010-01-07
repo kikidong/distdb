@@ -1,20 +1,17 @@
 /*
  * client.c
  *
- * Copyright (C) 2009-2010 Kingstone, ltd
+ * Copyright (C) 2009-2010 microcai
  *
- * Written by microcai in 2009-2010
- *
- * This software is lisenced under the Kingstone mid-ware Lisence.
+ * This software is Public Domain
  *
  * For more infomation see COPYING file shipped with this software.
  *
  * If you have any question with this software, please contract microcai, the
  * original writer of this software.
  *
- * If you have any question with law suite, please contract 黄小克, the owner of
- * this company.
  */
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #else
@@ -58,6 +55,7 @@ int distdb_rpc_disconnect()
 	rpc_socket = -1;
 }
 
+
 int distdb_rpc_execute_sql_bin(struct DISTDB_SQL_RESULT ** out,const char *sql,size_t length,int executeflag)
 {
 	struct rpc_packet_call * buff = malloc(sizeof(struct rpc_packet_call) + length );
@@ -80,3 +78,4 @@ int main()
 	printf("version %s compiled on %s %s\n",VERSION, __DATE__,__TIME__);
 	exit(0);
 }
+

@@ -1,19 +1,15 @@
 /*
  * rpc_op.c - rpc operation
  *
- * Copyright (C) 2009-2010 Kingstone, ltd
+ * Copyright (C) 2009-2010 microcai
  *
- * Written by microcai in 2009-2010
- *
- * This software is lisenced under the Kingstone mid-ware Lisence.
+ * This software is Public Domain
  *
  * For more infomation see COPYING file shipped with this software.
  *
  * If you have any question with this software, please contract microcai, the
  * original writer of this software.
  *
- * If you have any question with law suite, please contract 黄小克, the owner of
- * this company.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -41,7 +37,6 @@ int open_rpc_socket()
 	return -1;
 }
 
-
 static struct rpc_call_table{
 	int (* call)(char * data, size_t * ret );
 }rpc_call_table[20]={0};
@@ -55,8 +50,8 @@ static void rpc_dispatch(size_t * len,char * recv)
 	* len = return_size + sizeof(*pr);
 }
 
-/*
- * The big massive loop than handles RPC call.
+
+/* The big massive loop than handles RPC call.
  * Since it is UDP, we can use one socket to serve many clients
  */
 static void * rpc_loop_thread(void*p)
@@ -74,6 +69,9 @@ static void * rpc_loop_thread(void*p)
 	}while(1);
 }
 
+/*
+ *The big massive loop than handles RPC call
+ */
 int rpc_loop()
 {
 	pthread_t pt;

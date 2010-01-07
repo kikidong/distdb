@@ -10,9 +10,7 @@ AM_INIT_AUTOMAKE([-Wall -Werror])
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_INSTALL
-#AC_PROG_LIBTOOL
-#AC_LIBTOOL_WIN32_DLL
-#AC_DISABLE_STATIC
+
 
 #PKG_PROG_PKG_CONFIG
 AC_CHECK_PROG([have_curl],[curl],[yes],[no])
@@ -33,6 +31,9 @@ AC_ARG_WITH(nodes_url,
 	[with_nodes_url="http://`hostname`.`domainname`/nodes.db"]
 )
 
+#Check for ENABLE
+AC_ARG_ENABLE([debug],[AC_HELP_STRING([--enable-debug],[enable debug])],[CFLAGS="-O0 -g3" AC_DEFINE(DEBUG,1,[defined if in debug mode])])
+
 AC_ARG_WITH([sqlite],
 			[AC_HELP_STRING([--with-sqlite],[build support for sqlite kackend, default yes])],[],
 			[with_sqlite="check"])
@@ -52,9 +53,11 @@ AC_ARG_ENABLE([debug],[AC_HELP_STRING([--enable-debug],[enable debug])],
 			AC_DEFINE(DEBUG,1,[defined if in debug mode])
 		])
 
+
 # Checks for libraries.
 #PKG_CHECK_MODULES([LIBCURL],[libcurl])
 #AC_CHECK_LIB([curl],[curl_easy_init])
+
 AC_CHECK_LIB(pthread,pthread_create,[],[AC_MSG_FAILURE([need pthread library],1)])
 AC_SEARCH_LIBS(dlopen,dl)
 
@@ -98,6 +101,7 @@ AS_IF([ test "x$with_mysql" != "xno" ],
 ])
 
 AM_CONDITIONAL([WITH_MYSQL], [ test "x$have_mysql" = "xyes" ] )
+
 
 # Checks for header files.
 

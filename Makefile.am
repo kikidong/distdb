@@ -4,6 +4,7 @@ SUBDIRS = include lib src init db
 bin_PROGRAMS = distdb
 
 distdb_SOURCES  = init/main.c init/inifile.c init/gennodes.c init/prase.c
+
 distdb_SOURCES += src/global_var.c src/rpc_op.c src/masterloop.c src/database.c
 
 distdb_DEPENDENCES = init/inifile.h init/prase.h

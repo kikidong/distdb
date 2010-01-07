@@ -1,21 +1,16 @@
 /*
  * database.c - wapper for many database back-end
  *
- * Copyright (C) 2009-2010 Kingstone, ltd
+ * Copyright (C) 2009-2010 microcai
  *
- * Written by microcai in 2009-2010
- *
- * This software is lisenced under the Kingstone mid-ware Lisence.
+ * This software is Public Domain
  *
  * For more infomation see COPYING file shipped with this software.
  *
  * If you have any question with this software, please contract microcai, the
  * original writer of this software.
  *
- * If you have any question with law suite, please contract 黄小克, the owner of
- * this company.
  */
-
 
 
 #ifdef HAVE_CONFIG_H
@@ -57,6 +52,41 @@ int	load_plugins(const char * configfile)
 //	dbplugin = dlopen("sqlite.so",RTLD_NOW);
 
 	cf = fopen(configfile,"r");
+	if(!cf)
+	{
+		return -1;
+	}
+
+	char backend[128] = "sqlite";
+	void * dbplugin;
+	char * so_file;
+
+	get_profile_string(cf,"global","backend",backend,sizeof(backend));
+
+	so_file = strdup(PLUINGDIR);
+	so_file = realloc(so_file,strlen(so_file)+ strlen(backend) + 1 );
+	dbplugin = dlopen(so_file, RTLD_NOW);
+	free(so_file);
+	if(!dbplugin)
+	{
+		fprintf(stderr,dlerror());
+		close(cf);
+		return -1;
+	}
+	close(cf);
+	return 0;
+}
+
+extern void * getbase()
+{
+	return &db;
+}
+
+int	load_plugins(const char * configfile)
+{
+//	dbplugin = dlopen("sqlite.so",RTLD_NOW);
+
+	FILE *cf = fopen(configfile,"r");
 	if(!cf)
 	{
 		return -1;
