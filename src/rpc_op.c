@@ -21,6 +21,8 @@
 #endif
 
 #include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #define __DISTDB_SERVER_SIDE_H
 
@@ -28,30 +30,37 @@
 #include "../include/distdb.h"
 #include "../include/rpc.h"
 
-int open_rpc_socket()
+
+static int rpc_call_exec_sql(char * data, size_t * retsize)
 {
-	int opt = 1;
-	struct sockaddr_in addr = {0};
-	addr.sin_family = AF_INET;
-	addr.sin_port = RPC_DEFAULT_PORT;
-	g_rpc_socket = socket(AF_INET,SOCK_DGRAM,0);
-	setsockopt(g_rpc_socket,SOL_SOCKET,SO_REUSEADDR,&opt,sizeof(opt));
-	bind(g_rpc_socket,(struct sockaddr*)&addr,INET_ADDRSTRLEN);
-	listen(g_rpc_socket,2);
-	return -1;
+	int ret;
+
+	struct execute_sql_bin * pdata = (typeof(pdata)) data;
+
+	ret = distdb_rpc_execute_sql_bin((DISTDB_SQL_RESULT**)data,pdata->data,pdata->length,pdata->flag);
+
+	ret = sizeof(void*);
+
+	return ret ;
+
 }
 
 
-static struct rpc_call_table{
-	int (* call)(char * data, size_t * ret );
-}rpc_call_table[20]={0};
+static int (* rpc_call_table[20])(char * data, size_t * ret)  =
+{
+		/*The first call.*/
+		0,
+		/* DISTDB_RPC_EXECUTE_SQL_BIN = 1 */
+		rpc_call_exec_sql,
+		0
+};
 
 static void rpc_dispatch(size_t * len,char * recv)
 {
 	size_t return_size;
 	struct rpc_packet_call * pc = (typeof(pc))recv;
 	struct rpc_packet_ret * pr = (typeof(pr))recv;
-	pr->ret = (rpc_call_table[pc->rpc_call_id].call)(pc->data, &return_size);
+	pr->ret = (rpc_call_table[pc->rpc_call_id])(pc->data, &return_size);
 	* len = return_size + sizeof(*pr);
 }
 
@@ -78,4 +87,17 @@ int rpc_loop()
 {
 	pthread_t pt;
 	return pthread_create(&pt,0,rpc_loop_thread,0);
+}
+
+int open_rpc_socket()
+{
+	int opt = 1;
+	struct sockaddr_in addr = {0};
+	addr.sin_family = AF_INET;
+	addr.sin_port = RPC_DEFAULT_PORT;
+	g_rpc_socket = socket(AF_INET,SOCK_DGRAM,0);
+	setsockopt(g_rpc_socket,SOL_SOCKET,SO_REUSEADDR,&opt,sizeof(opt));
+	bind(g_rpc_socket,(struct sockaddr*)&addr,INET_ADDRSTRLEN);
+	listen(g_rpc_socket,2);
+	return -1;
 }

@@ -117,6 +117,14 @@ AC_CHECK_FUNC([getline],[AC_DEFINE(HAVE_GETLINE,1,[more safe than fgets, defined
 AC_CHECK_FUNC([getdelim],[AC_DEFINE(HAVE_GETDELIM,1,[more safe than fgets, defined if found ])],
 				[AC_MSG_WARN([getdelim not found, use unsafe fgets instead!])])
 
+AC_CHECK_TYPE(uint32_t,[],
+	[
+		AC_DEFINE(uint32_t,UINT,[Define for windows that do not have uint32_t])
+	],
+	[[
+		#include <stdint.h>
+	]])
+AC_CHECK_HEADERS([stdint.h])
 #define MACROS
 
 AC_DEFINE_UNQUOTED(CONF_FILE,"${with_config}",[default config file])

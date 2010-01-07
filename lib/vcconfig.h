@@ -12,6 +12,7 @@
 #include <windows.h>
 #endif
 
+typedef unsigned int uint32_t;
 
 
 #endif /* VCCONFIG_H_ */

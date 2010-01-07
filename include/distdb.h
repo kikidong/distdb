@@ -59,6 +59,7 @@ static inline size_t getline (char ** __lineptr,size_t * __n,FILE * __stream)
 __BEGIN_DECLS
 
 struct DISTDB_SQL_RESULT;
+typedef struct DISTDB_SQL_RESULT DISTDB_SQL_RESULT;
 
 const char* distdb_version();
 int distdb_rpc_connectto(const char * server);
@@ -80,8 +81,12 @@ enum executeflag{
 #define DISTDB_RPC_EXECSQL_LOCALONLY	DISTDB_RPC_EXECSQL_NOSERVER
 
 	//force distdb to discard results
-	DISTDB_RPC_EXECSQL_NORESULT = 0x00000004
+	DISTDB_RPC_EXECSQL_NORESULT = 0x00000004 ,
 #define	DISTDB_RPC_EXECSQL_NORESULT DISTDB_RPC_EXECSQL_NORESULT
+
+	//Make sure we can make multiple sql calls simultaneously
+	DISTDB_RPC_EXECSQL_ALLOWRECURSIVE = 0x00010000
+#define DISTDB_RPC_EXECSQL_ALLOWRECURSIVE DISTDB_RPC_EXECSQL_ALLOWRECURSIVE
 
 };
 

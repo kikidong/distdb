@@ -24,8 +24,10 @@
 #include "../include/distdb.h"
 #include "../include/rpc.h"
 
+
 static int rpc_socket = -1 ;
 static struct sockaddr_in server_addr = {0};
+long	seq;
 
 int distdb_rpc_connectto(const char * server)
 {
@@ -60,12 +62,28 @@ int distdb_rpc_disconnect()
 
 int distdb_rpc_execute_sql_bin(struct DISTDB_SQL_RESULT ** out,const char *sql,size_t length,int executeflag)
 {
-	struct rpc_packet_call * buff = malloc(sizeof(struct rpc_packet_call) + length );
+	socklen_t	addrlen = INET_ADDRSTRLEN;
+	char	buff[8192];
+	struct rpc_packet_call * sbuff = (typeof(sbuff))buff;
+	struct rpc_packet_ret * rbuff = (typeof(rbuff))buff;
+	sbuff->rpc_call_id = DISTDB_RPC_EXECUTE_SQL_BIN;
+	sbuff->call_seq = ++seq;
+	struct execute_sql_bin * pdata = (typeof(pdata))(sbuff->data);
+	pdata->length = length;
+	pdata->flag = executeflag;
+	memcpy(pdata->data, sql, length);
 
-	buff->rpc_call_id =
+	if (sendto(rpc_socket, buff, length + SIZE_RPC_HEADER + SIZE_EXECUTE_SQL_BIN ,
+			0,(struct sockaddr*) &server_addr, INET_ADDRSTRLEN) < 0)
+		return -1;
 
-	sendto(rpc_socket,0,0,0,(struct sockaddr*)&server_addr,INET_ADDRSTRLEN);
+	if (recvfrom(rpc_socket, buff, sizeof(buff), 0, (struct sockaddr*) &server_addr,&addrlen) < 0)
+		return -1;
 
+	if(rbuff->call_seq != seq)
+		return -1;
+	memcpy(out, rbuff->data, sizeof(void*)); // sir, this is the best way :)
+	return rbuff->ret;
 }
 
 int distdb_rpc_execute_sql_str(struct DISTDB_SQL_RESULT ** out,const char *sql,int executeflag)
@@ -73,7 +91,7 @@ int distdb_rpc_execute_sql_str(struct DISTDB_SQL_RESULT ** out,const char *sql,i
 	return distdb_rpc_execute_sql_bin(out,sql,strlen(sql) +1 ,executeflag);
 }
 
-int main()
+int main(int argc, char* argv[])
 {
 	printf("libdistdb -- The rpc call wrapper for distdb\n");
 	printf("Copyright (C) 2009-2010 microcai %s\n",PACKAGE_BUGREPORT);
