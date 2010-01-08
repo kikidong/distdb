@@ -7,7 +7,6 @@
 
 __BEGIN_DECLS
 
-
 #pragma pack(push,1)
 
 struct rpc_packet_call{
@@ -33,10 +32,16 @@ struct execute_sql_bin{
 };
 #define SIZE_EXECUTE_SQL_BIN 8
 
+struct rpc_sql_result{
+	uint8_t	number;
+	uint8_t offsets[0];
+};
+
 #pragma pack(pop)
 
 #define DISTDB_RPC_EXECUTE_SQL_BIN	1
 #define DISTDB_RPC_FREE_RESLUT		2
+#define DISTDB_RPC_FETCH_RESULT		3
 
 __END_DECLS
 #endif // __PACKET__H

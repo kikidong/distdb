@@ -93,7 +93,8 @@ enum executeflag{
 int distdb_rpc_execute_sql_str(struct DISTDB_SQL_RESULT ** out,const char * sql, int executeflag);
 int distdb_rpc_execute_sql_bin(struct DISTDB_SQL_RESULT ** out,const char *,size_t length,int executeflag);
 
-int distdb_rpc_fetch_result(struct DISTDB_SQL_RESULT * in ,char * result[]);
+// One call , one row, more row ? call more
+int distdb_rpc_fetch_result(struct DISTDB_SQL_RESULT * in ,char ** result[]);
 int distdb_rpc_free_result(struct DISTDB_SQL_RESULT *);
 
 __END_DECLS

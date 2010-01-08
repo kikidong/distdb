@@ -29,16 +29,7 @@
 #include "../include/global_var.h"
 #include "../include/distdb.h"
 #include "../include/inifile.h"
-
-struct DISTDB_SQL_RESULT{
-	time_t	time;	// The time that request the execution
-	DEFINE_LIST(resultlist); // The results must be linked together. :)
-	struct	the_db_ops * db; // the db opetator
-	void*	db_private_ptr;
-	// the severs that receives the same requeset
-	int		columns; // columns that may return
-
-};
+#include "../include/db_def.h"
 
 static LIST_SLOT_DEFINE(results);
 static FILE * cf;
@@ -110,7 +101,7 @@ int distdb_rpc_execute_sql_bin(struct DISTDB_SQL_RESULT ** out,const char *sql,s
 	return 0;
 }
 
-int distdb_rpc_fetch_result(struct DISTDB_SQL_RESULT * in,char * result[])
+int distdb_rpc_fetch_result(struct DISTDB_SQL_RESULT * in,char ** result[])
 {
 	return db.db_fetch_row(in->db_private_ptr,result);
 }

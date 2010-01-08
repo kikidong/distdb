@@ -29,7 +29,7 @@
 #include "../include/global_var.h"
 #include "../include/distdb.h"
 #include "../include/rpc.h"
-
+#include "../include/db_def.h"
 
 static int rpc_call_exec_sql(char * data, size_t * retsize)
 {
@@ -51,24 +51,80 @@ static int rpc_free_result(char * data, size_t * retsize)
 	return distdb_rpc_free_result((DISTDB_SQL_RESULT*)data);
 }
 
+static int rpc_fetch_result(char * data, size_t * retsize)
+{
+	int i,retval;
+	DISTDB_SQL_RESULT * reslt = *(DISTDB_SQL_RESULT**)data;
+	struct rpc_sql_result * srst = (typeof(srst))data;
+	srst->number = reslt->columns;
 
+	char ** res;
+
+	retval = distdb_rpc_fetch_result(reslt,&res);
+
+	if (retval==-1)
+	{
+		*retsize = 0;
+		return -1;
+	}
+
+	char * real_result = (char*)(srst->offsets + reslt->columns);
+
+	*retsize = reslt->columns +1 ;
+
+	for( i = 0; i < srst->number ; ++i )
+	{
+		strcpy(real_result,res[i]);
+		srst->offsets[i] = real_result - data;
+		real_result += strlen(res[i])+1;
+		*retsize += strlen(res[i])+1;
+	}
+	return retval;
+}
+
+static int rpc_stub(char * data, size_t * ret){	*ret = 0;return -1;}
 static int (* rpc_call_table[20])(char * data, size_t * ret)  =
 {
 		/*The first call.*/
-		0,
+		rpc_stub,
 		/* DISTDB_RPC_EXECUTE_SQL_BIN = 1 */
 		rpc_call_exec_sql,
 		/*DISTDB_RPC_FREE_RESLUT = 2*/
 		rpc_free_result,
-		0
+		/*DISTDB_RPC_FETCH_RESULT = 3*/
+		rpc_fetch_result,
+		rpc_stub,
+		rpc_stub,
+		rpc_stub,
+		rpc_stub,
+		rpc_stub,
+		rpc_stub,
+		rpc_stub,
+		rpc_stub,
+		rpc_stub,
+		rpc_stub,
+		rpc_stub,
+		rpc_stub,
+		rpc_stub,
+		rpc_stub,
+		rpc_stub,
+		rpc_stub
 };
 
 static void rpc_dispatch(size_t * len,char * recv)
 {
 	size_t return_size;
+
 	struct rpc_packet_call * pc = (typeof(pc))recv;
 	struct rpc_packet_ret * pr = (typeof(pr))recv;
-	pr->ret = (rpc_call_table[pc->rpc_call_id])(pc->data, &return_size);
+	return_size = *len - sizeof(*pc);
+	if( pc->rpc_call_id < 20)
+		pr->ret = (rpc_call_table[pc->rpc_call_id])(pc->data, &return_size);
+	else
+		{
+			pr->ret = -1;
+			return_size = 0;
+		}
 	* len = return_size + sizeof(*pr);
 }
 
