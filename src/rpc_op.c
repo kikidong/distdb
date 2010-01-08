@@ -45,6 +45,12 @@ static int rpc_call_exec_sql(char * data, size_t * retsize)
 
 }
 
+static int rpc_free_result(char * data, size_t * retsize)
+{
+	*retsize = 0;
+	return distdb_rpc_free_result((DISTDB_SQL_RESULT*)data);
+}
+
 
 static int (* rpc_call_table[20])(char * data, size_t * ret)  =
 {
@@ -52,6 +58,8 @@ static int (* rpc_call_table[20])(char * data, size_t * ret)  =
 		0,
 		/* DISTDB_RPC_EXECUTE_SQL_BIN = 1 */
 		rpc_call_exec_sql,
+		/*DISTDB_RPC_FREE_RESLUT = 2*/
+		rpc_free_result,
 		0
 };
 

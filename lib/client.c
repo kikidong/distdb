@@ -91,6 +91,28 @@ int distdb_rpc_execute_sql_str(struct DISTDB_SQL_RESULT ** out,const char *sql,i
 	return distdb_rpc_execute_sql_bin(out,sql,strlen(sql) +1 ,executeflag);
 }
 
+int distdb_rpc_free_result(struct DISTDB_SQL_RESULT *reslt)
+{
+	socklen_t	addrlen = INET_ADDRSTRLEN;
+	char	buff[8192];
+	struct rpc_packet_call * sbuff = (typeof(sbuff))buff;
+	struct rpc_packet_ret * rbuff = (typeof(rbuff))buff;
+	sbuff->rpc_call_id = DISTDB_RPC_FREE_RESLUT;
+	sbuff->call_seq = ++seq;
+	memcpy(sbuff->data,&reslt,sizeof(reslt));
+
+	if (sendto(rpc_socket, buff, 8 + SIZE_RPC_HEADER ,
+			0,(struct sockaddr*) &server_addr, INET_ADDRSTRLEN) < 0)
+		return -1;
+
+	if (recvfrom(rpc_socket, buff, sizeof(buff), 0, (struct sockaddr*) &server_addr,&addrlen) < 0)
+		return -1;
+
+	if(rbuff->call_seq != seq)
+		return -1;
+	return rbuff->ret;	 //:D
+}
+
 int main(int argc, char* argv[])
 {
 	printf("libdistdb -- The rpc call wrapper for distdb\n");

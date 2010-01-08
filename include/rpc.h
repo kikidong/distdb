@@ -36,6 +36,7 @@ struct execute_sql_bin{
 #pragma pack(pop)
 
 #define DISTDB_RPC_EXECUTE_SQL_BIN	1
+#define DISTDB_RPC_FREE_RESLUT		2
 
 __END_DECLS
 #endif // __PACKET__H
