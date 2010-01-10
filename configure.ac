@@ -11,6 +11,10 @@ AM_INIT_AUTOMAKE([-Wall -Werror])
 AC_PROG_CC
 AC_PROG_INSTALL
 
+build_java=false
+AC_CHECK_PROG([JAVAC],[javac],[javac])
+AC_CHECK_PROG([JAVAH],[javah],[javah])
+
 #AC_PROG_LIBTOOL
 #AC_LIBTOOL_WIN32_DLL
 #AC_DISABLE_STATIC
@@ -102,6 +106,16 @@ AM_CONDITIONAL([WITH_MYSQL], [ test "x$have_mysql" = "xyes" ] )
 
 # Checks for header files.
 
+
+AS_IF([test "x$JAVAC" = "xjavac"],[
+		AC_CHECK_HEADER([jni.h],[build_java=true],
+			[
+			AC_MSG_NOTICE([java compilter found, but libgcj-devel not found!,java binding will not be build])			
+			])
+	])
+
+AM_CONDITIONAL(BUILD_JAVA,[$build_java])
+
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_INLINE
 
@@ -159,7 +173,9 @@ AC_CONFIG_FILES([
                  db/Makefile
                  bindings/Makefile
                  bindings/java/Makefile
+                 doc/Makefile
+                 doc/Doxyfile
                  Makefile
-                 distdb.conf
+                 distdb.conf                 
                  ])
 AC_OUTPUT

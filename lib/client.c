@@ -1,5 +1,5 @@
 /*
- * client.c
+ * @file client.c - rpc 连接.
  *
  * Copyright (C) 2009-2010 Kingstone, ltd
  *
@@ -26,12 +26,23 @@
 #include "../include/rpc.h"
 #include "../include/list.h"
 
+/**
+ * Internal use only
+ */
 struct DISTDB_SQL_RESULT {
+	/**
+	 * 结果
+	 */
 	char **result;
+	/**
+	 * 列
+	 */
 	int	 col;
+	/**
+	 * 传给 RPC
+	 */
 	char  sql_result[8];
 };
-
 
 static int rpc_socket = -1 ;
 static struct sockaddr_in server_addr = {0};
@@ -62,7 +73,7 @@ int distdb_rpc_connectto(const char * server)
 	return connect(rpc_socket,(struct sockaddr*)&server_addr,INET_ADDRSTRLEN);
 }
 
-int distdb_rpc_disconnect()
+void distdb_rpc_disconnect()
 {
 	close(rpc_socket);
 	rpc_socket = -1;
@@ -133,6 +144,15 @@ int distdb_rpc_free_result(struct DISTDB_SQL_RESULT *reslt)
 	return rbuff->ret;	 //:D
 }
 
+/**
+ * @brief distdb_rpc_fetch_result 获得结果.
+ *
+ * @reslt
+ *
+ * @result 返回
+ *
+ * @return 成功返回 0 ，失败 -1
+ */
 int distdb_rpc_fetch_result(struct DISTDB_SQL_RESULT * reslt,char ** result[])
 {
 	int i;

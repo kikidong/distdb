@@ -1,5 +1,7 @@
 
-SUBDIRS = include lib src init db bindings
+SUBDIRS = include src init db  bindings lib doc
+
+EXTRA_DIST = nodes.db.in Doxygen.in distdb.conf.in
 
 bin_PROGRAMS = distdb
 
@@ -12,3 +14,6 @@ distdb_LDFLAGS  = -Wl,--export-dynamic -as-need -Wl,-rpath,$(libdir)/distdb,-rpa
 
 sysconf_DATA = distdb.conf
 localstate_DATA = nodes.db
+
+html-local:
+	cd doc && ${MAKE} $@

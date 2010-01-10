@@ -2,19 +2,18 @@
  * distdb.java - RPC binding for java
  * 
  */
-
-
+import java.*;
 public class distdb {
 	static
 	{
-		System.loadLibrary("distdb.so");
+		System.loadLibrary("libdistdb");
 	}
-	public native static double test(double p);
+	public native static double testd(double p);
 	
     public static void main(String[] args)
     {
-            double j;
-            j = distdb.test(4);
+    		double j;
+            j = distdb.testd(4);
             System.out.print(j);
     }
 }
