@@ -55,17 +55,24 @@ static inline size_t getline (char ** __lineptr,size_t * __n,FILE * __stream)
 
 #endif
 
+#ifdef __DISTDB_SERVER_SIDE_H
+
 #ifndef MIN
 #define MIN(x,y)	( (x) < (y) ? (x):(y) )
 #endif
-
 #define ZEROWITHSIZE(structure)	memset(&structure,0,sizeof(structure));
 
+#endif
 /**
  * @brief 用4个int参数构造出ip地址类型，而不用管CPU大端小端
  */
 #define MAKEINET(s1,s2,s3,s4)	(((s1)& 0xFF)<< 24 ) |(((s2)& 0xFF)<< 16 )|(((s3)& 0xFF)<< 8 )|((s4)& 0xFF)
 
+/**
+ * @brief 本地回环地址 127.0.0.1
+ *
+ * 使用  MAKEINET(127,0,0,1) 构建本机地址
+ */
 #define LOCALHOST	MAKEINET(127,0,0,1)
 
 __BEGIN_DECLS
@@ -137,6 +144,8 @@ enum executeflag{
 
 	/** @see DISTDB_RPC_EXECSQL_NOLOCAL */
 #define DISTDB_RPC_EXECSQL_NOLOCAL DISTDB_RPC_EXECSQL_NOLOCAL
+	/**< force distdb to send request to other computers*/
+
 #define DISTDB_RPC_EXECSQL_SERVERONLY DISTDB_RPC_EXECSQL_NOLOCAL
 #define DISTDB_RPC_EXECSQL_NOSERVER	DISTDB_RPC_EXECSQL_NOSERVER
 #define DISTDB_RPC_EXECSQL_LOCALONLY	DISTDB_RPC_EXECSQL_NOSERVER
