@@ -10,6 +10,7 @@ AM_INIT_AUTOMAKE([-Wall -Werror])
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_INSTALL
+
 #AC_PROG_LIBTOOL
 #AC_LIBTOOL_WIN32_DLL
 #AC_DISABLE_STATIC
@@ -156,6 +157,8 @@ AC_CONFIG_FILES([
                  lib/Makefile
                  init/Makefile
                  db/Makefile
+                 bindings/Makefile
+                 bindings/java/Makefile
                  Makefile
                  distdb.conf
                  ])

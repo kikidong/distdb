@@ -20,6 +20,21 @@
 
 对数据库的操作都可以被转换为 SQL 语句。对于不能转换的，distdb 无能为力。因为这是 特定于特定的数据库类型的
 
+distdb 首先导出一个支持 SQL 操作的 RPC 调用接口，接着，所有别的操作都可以建立在这个RPC接口之上。
+
+RPC接口由 libdistdb.so (distdb.dll) 导出。偶将负责在 libdistdb 之上构建一个高级的数据库操作视图。这
+个高级操作视图也将导出 java 接口，并使用 JNI(Java Native Interface) 调用。
+
+
+RPC连接的使用　
+
+首先初始化的时候调用　distdb_rpc_connectto(char*server) 连接RPC服务器。
+如果 server 指针为　NULL 表示连接本地服务。server 字符串可以使用　SERVERNAME:[PORT] 的形式指定端口。
+SERVERNAME 可以是　IP 地址，也可以是计算机名。
+
+
+
+
 
 
 

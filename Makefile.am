@@ -1,5 +1,5 @@
 
-SUBDIRS = include lib src init db
+SUBDIRS = include lib src init db bindings
 
 bin_PROGRAMS = distdb
 
