@@ -13,7 +13,7 @@ int distdb_rpc_execute_sql_bin(struct DISTDB_SQL_RESULT ** out,const char *,size
 
 //可以不用等全部的结果出来。 :)
 int distdb_rpc_wait_result(struct DISTDB_SQL_RESULT *,int waitflag);
-int distdb_rpc_fetch_result(struct DISTDB_SQL_RESULT *,char * result[]);
+int distdb_rpc_fetch_result(struct DISTDB_SQL_RESULT *,char ** result[]);
 int distdb_rpc_seek_result(struct DISTDB_SQL_RESULT *, int skip );
 int distdb_rpc_free_result(struct DISTDB_SQL_RESULT *);
 int distdb_rpc_result_info(struct DISTDB_SQL_RESULT *,int whatinfo , ... );
@@ -36,7 +36,7 @@ int distdb_rpc_execute_sql_bin(struct DISTDB_SQL_RESULT ** out,const char *,size
 
 //可以不用等全部的结果出来。 :)
 int distdb_rpc_wait_result(struct DISTDB_SQL_RESULT *,int waitflag);
-int distdb_rpc_fetch_result(struct DISTDB_SQL_RESULT *,char * result[]);
+int distdb_rpc_fetch_result(struct DISTDB_SQL_RESULT *,char ** result[]);
 int distdb_rpc_seek_result(struct DISTDB_SQL_RESULT *, int skip );
 int distdb_rpc_free_result(struct DISTDB_SQL_RESULT *);
 int distdb_rpc_result_info(struct DISTDB_SQL_RESULT *,int whatinfo , ... );

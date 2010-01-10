@@ -22,3 +22,5 @@ libtool
 *.lo
 distdb
 distdb.ini
+html/
+latex/

@@ -1,0 +1,12 @@
+
+
+SOURCES = client.c version.c 
+
+OBJ = client.obj version.obj
+
+distdb.dll : $(OBJ)
+	link $(OBJ) /subsystem:windows /DLL /out:$@
+	
+.obj.c: $(SOURCES)
+	cl $< /c /DWIN32
+	

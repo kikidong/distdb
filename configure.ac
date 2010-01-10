@@ -11,6 +11,10 @@ AM_INIT_AUTOMAKE([-Wall -Werror])
 AC_PROG_CC
 AC_PROG_INSTALL
 
+build_java=false
+AC_CHECK_PROG([JAVAC],[javac],[javac])
+AC_CHECK_PROG([JAVAH],[javah],[javah])
+
 
 #PKG_PROG_PKG_CONFIG
 AC_CHECK_PROG([have_curl],[curl],[yes],[no])
@@ -105,6 +109,16 @@ AM_CONDITIONAL([WITH_MYSQL], [ test "x$have_mysql" = "xyes" ] )
 
 # Checks for header files.
 
+
+AS_IF([test "x$JAVAC" = "xjavac"],[
+		AC_CHECK_HEADER([jni.h],[build_java=true],
+			[
+			AC_MSG_NOTICE([java compilter found, but libgcj-devel not found!,java binding will not be build])			
+			])
+	])
+
+AM_CONDITIONAL(BUILD_JAVA,[$build_java])
+
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_INLINE
 
@@ -121,6 +135,14 @@ AC_CHECK_FUNC([getline],[AC_DEFINE(HAVE_GETLINE,1,[more safe than fgets, defined
 AC_CHECK_FUNC([getdelim],[AC_DEFINE(HAVE_GETDELIM,1,[more safe than fgets, defined if found ])],
 				[AC_MSG_WARN([getdelim not found, use unsafe fgets instead!])])
 
+AC_CHECK_TYPE(uint32_t,[],
+	[
+		AC_DEFINE(uint32_t,UINT,[Define for windows that do not have uint32_t])
+	],
+	[[
+		#include <stdint.h>
+	]])
+AC_CHECK_HEADERS([stdint.h])
 #define MACROS
 
 AC_DEFINE_UNQUOTED(CONF_FILE,"${with_config}",[default config file])
@@ -152,7 +174,11 @@ AC_CONFIG_FILES([
                  lib/Makefile
                  init/Makefile
                  db/Makefile
+                 bindings/Makefile
+                 bindings/java/Makefile
+                 doc/Makefile
+                 doc/Doxyfile
                  Makefile
-                 distdb.conf
+                 distdb.conf                 
                  ])
 AC_OUTPUT

@@ -17,7 +17,7 @@
 #endif
 
 #include "vcconfig.h"
-
+#include <stdlib.h>
 
 #define __DISTDB_SERVER_SIDE_H
 
@@ -27,6 +27,17 @@ const char* distdb_version()
 {
 	return PACKAGE_VERSION;
 }
+extern long seq;
+
+void __init()
+{
+	seq = rand();
+}
+
+void __finit()
+{
+
+}
 
 #ifdef _WIN32
 BOOL WINAPI DllMain(HINSTANCE hinstDLL,DWORD fdwReason,LPVOID lpvReserved)
@@ -35,9 +46,11 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL,DWORD fdwReason,LPVOID lpvReserved)
 	{
 		WSADATA wsadata;
 		WSAStartup(MAKEWORD(2,1),&wsadata);
+		__init();
 
 	}else if (fdwReason == DLL_PROCESS_DETACH)
 	{
+		__finit();
 		WSACleanup();
 	}
 }

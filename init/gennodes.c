@@ -23,6 +23,8 @@
 #include <pthread.h>
 #include <sys/socket.h>
 
+#define __DISTDB_SERVER_SIDE_H
+
 #include "../include/nodes.h"
 #include "../include/global_var.h"
 #include "../include/distdb.h"

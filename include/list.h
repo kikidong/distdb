@@ -42,7 +42,7 @@ typedef struct list_slot{
 #define LIST_NODE_OFFSET(v,listname)	((size_t)((char*)&(((typeof(v))0)->listname)))
 #define LIST_NODE_OFFSET_(type,listname)	((size_t)((char*)&(((struct type*)0)->listname)))
 
-#define LIST_HEAD(node,structname,listname)	( (struct structname *) ((char*)node - LIST_NODE_OFFSET_(structname,listname)) )
+#define LIST_HEAD(node,structname,listname)	((struct structname *)( (char*)node - LIST_NODE_OFFSET_(structname,listname)  ))
 
 /*
  * Use this to declare a list slot.

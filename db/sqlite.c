@@ -41,6 +41,7 @@ struct sqlite{
 	int row;
 	int col;
 	int current;
+	char **currentline;
 };
 
 /*
@@ -80,6 +81,7 @@ static int execsql(void**out,const char * sql,int byte)
 		forout->col = col;
 		forout->row = row;
 		forout->current = 1;
+		forout->currentline = calloc(col,sizeof(char*));
 	}
 	if(errmsg)
 	{
@@ -96,17 +98,18 @@ static int get_result(void * ptr)
 	return sqlite3_step((sqlite3_stmt*)ptr);
 }
 
-static int fetch_row(void* ptr,char** reslut)
+static int fetch_row(void* ptr,char*** reslut)
 {
 	int i;
 	struct sqlite * sp = (struct sqlite*) ptr;
+	*reslut = sp->currentline;
 
 	if( sp->current > sp->row)
 		return -1;
 
 	for(i=0;i<sp->col;i++)
 	{
-		strcpy(reslut[i],sp->result[sp->current*sp->col + i ]);
+		sp->currentline[i] = sp->result[sp->current*sp->col + i ];
 	}
 	sp->current ++;
 	return 0;
