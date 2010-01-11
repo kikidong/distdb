@@ -15,6 +15,8 @@
  * If you have any question with law suite, please contract 黄小克, the owner of
  * this company.
  */
+static char zeropage[4096];
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #else
@@ -100,7 +102,7 @@ int distdb_rpc_execute_sql_bin(struct DISTDB_SQL_RESULT ** out,const char *sql,s
 
 	if(rbuff->call_seq != seq)
 		return -1;
-	if(memcmp(rbuff->data,0,8) ==0)
+	if(memcmp(rbuff->data,zeropage,8) !=0)
 	{
 		*out = (DISTDB_SQL_RESULT*)malloc(sizeof(struct DISTDB_SQL_RESULT));
 		(*out)->result = NULL;
@@ -163,7 +165,7 @@ int distdb_rpc_fetch_result(struct DISTDB_SQL_RESULT * reslt,char ** result[])
 	sbuff->call_seq = ++seq;
 	struct rpc_sql_result * res = (typeof(res))rbuff->data;
 
-	memcpy(sbuff->data,&reslt,sizeof(reslt));
+	memcpy(sbuff->data,&reslt->sql_result,sizeof(reslt));
 
 	if (sendto(rpc_socket, buff, 8 + SIZE_RPC_HEADER ,
 			0,(struct sockaddr*) &server_addr, INET_ADDRSTRLEN) < 0)
@@ -181,11 +183,13 @@ int distdb_rpc_fetch_result(struct DISTDB_SQL_RESULT * reslt,char ** result[])
 	free(reslt->result);
 
 	reslt->result = calloc(res->number,sizeof(char*));
+	reslt->col = res->number;
 
 	for(i=0 ;i < res->number;++i)
 	{
 		reslt->result[i] = strdup(rbuff->data + res->offsets[i]);
 	}
+	*result = reslt->result;
 	return rbuff->ret;	 //:D
 }
 

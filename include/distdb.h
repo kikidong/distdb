@@ -67,7 +67,7 @@ static inline size_t getline (char ** __lineptr,size_t * __n,FILE * __stream)
 /**
  * @brief 用4个int参数构造出ip地址类型，而不用管CPU大端小端
  */
-static int inline MAKEINET(s1,s2,s3,s4)
+static int inline MAKEINET(int s1,int s2,int s3,int s4)
 {
 	union {
 		unsigned char saddr[4];

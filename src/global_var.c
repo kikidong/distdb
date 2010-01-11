@@ -26,6 +26,9 @@
 #include "../include/global_var.h"
 #include "../include/distdb.h"
 
+static char _zeropage[4096];
+
+
 int	g_rpc_socket,g_socket;
 
 LIST_SLOT_DEFINE(nodelist);
@@ -34,5 +37,7 @@ LIST_SLOT_DEFINE(node_connectedlist);
 
 int				  groupcount;
 struct _groupmap *groupmap;
+
+void*			  zeropage = (void*)_zeropage;
 
 struct db_ops db;

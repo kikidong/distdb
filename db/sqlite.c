@@ -24,6 +24,7 @@
 #include "../include/inifile.h"
 #include "../include/distdb.h"
 #include "../include/global_var.h"
+#include "../include/db_def.h"
 
 int main(int argc,char* argv[])
 {
@@ -39,6 +40,7 @@ static char * dbfile;
 static sqlite3	* pdb;
 
 struct sqlite{
+	sqlite3	* pdb;
 	char ** result;
 	int row;
 	int col;
@@ -46,12 +48,32 @@ struct sqlite{
 	char **currentline;
 };
 
-/*
+/**
  * Open database
  */
-int opendb()
+int opendb(struct DISTDB_SQL_RESULT * res,int reopen)
 {
-	return sqlite3_open(dbfile,&pdb);
+	res->db_private_ptr = malloc(sizeof(struct sqlite));
+	struct sqlite * p =(typeof(p))(res->db_private_ptr);
+
+	res->needclose = reopen;
+
+	if(reopen)
+		return sqlite3_open(dbfile,&p->pdb);
+	p->pdb = pdb;
+	return 0;
+}
+
+/**
+ * @brief 关闭打开的一个连接
+ */
+int db_close(struct DISTDB_SQL_RESULT*res)
+{
+	struct sqlite * p =(typeof(p))(res->db_private_ptr);
+	if(res->needclose)
+		sqlite3_close(p->pdb);
+	free(res->db_private_ptr);
+	return 0;
 }
 
 /*
@@ -66,44 +88,39 @@ int checkdb(char * tables[])
 /*
  * 执行 sql 语句
  */
-static int execsql(void**out,const char * sql,int byte)
+static int execsql(struct DISTDB_SQL_RESULT* res,const char * sql,int byte)
 {
 	char * errmsg;
 	char ** result;
 	int col;
 	int row;
-	struct sqlite	* forout;
+	struct sqlite	* forout =(typeof(forout))(res->db_private_ptr);
 
-	forout = NULL;
-
-	if (sqlite3_get_table(pdb, sql, &result, &row, &col, &errmsg) == SQLITE_OK)
+	if (sqlite3_get_table(forout->pdb, sql, &result, &row, &col, &errmsg) == SQLITE_OK)
 	{
-		forout = malloc(sizeof(struct sqlite));
+		forout->col = res->columns = col;
 		forout->result = result;
-		forout->col = col;
 		forout->row = row;
 		forout->current = 1;
 		forout->currentline = calloc(col,sizeof(char*));
+		return 0;
 	}
 	if(errmsg)
 	{
 		sqlite3_free(errmsg);
 	}
-	*out = forout;
-	if(forout)
-		return 0;
 	return -1;
 }
 
-static int get_result(void * ptr)
+static int get_result(struct DISTDB_SQL_RESULT* res)
 {
-	return sqlite3_step((sqlite3_stmt*)ptr);
+	return 0;
 }
 
-static int fetch_row(void* ptr,char*** reslut)
+static int fetch_row(struct DISTDB_SQL_RESULT * res,char*** reslut)
 {
 	int i;
-	struct sqlite * sp = (struct sqlite*) ptr;
+	struct sqlite * sp = (struct sqlite*) (res->db_private_ptr);
 	*reslut = sp->currentline;
 
 	if( sp->current > sp->row)
@@ -117,17 +134,15 @@ static int fetch_row(void* ptr,char*** reslut)
 	return 0;
 }
 
-static int free_reslut(void*ptr)
+static int free_reslut(struct DISTDB_SQL_RESULT * res)
 {
-	struct sqlite * sp = (struct sqlite*) ptr;
+	struct sqlite * sp = (struct sqlite*) res->db_private_ptr;
 	sqlite3_free_table(sp->result);
 	return 0;
 }
 
 void __init()
 {
-	printf(":P\n");
-
 	/*
 	 * Can't use global var, or it will failed to start
 	 * when execute as separate program
@@ -153,10 +168,12 @@ void __init()
 
 	db->db_open = opendb ;
 
+	db->db_close = db_close;
+
 	dbfile = malloc(1024);
 
 	get_profile_string(cf,"sqlite","db",dbfile,1024);
+	sqlite3_open(dbfile,&pdb);
 	printf("sqlite backend loaded\n");
-	sqlite3_initialize();
 	return;
 }

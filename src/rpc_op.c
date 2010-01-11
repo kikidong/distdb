@@ -39,7 +39,7 @@ static int rpc_call_exec_sql(char * data, size_t * retsize)
 
 	ret = distdb_rpc_execute_sql_bin((DISTDB_SQL_RESULT**)data,pdata->data,pdata->length,pdata->flag);
 
-	ret = sizeof(void*);
+	*retsize = sizeof(void*);
 
 	return ret ;
 
