@@ -1,5 +1,5 @@
 
-SUBDIRS = include src init db  bindings lib doc
+SUBDIRS = include src init lib db doc
 
 EXTRA_DIST = nodes.db.in Doxygen.in distdb.conf.in
 

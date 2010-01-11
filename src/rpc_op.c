@@ -136,8 +136,8 @@ static void * rpc_loop_thread(void*p)
 {
 	char * buffer = malloc(4096*3); // MORE THAN ONE PACKET
 	size_t	recv_len;
-	struct sockaddr_in	addr;
-	socklen_t			addr_len;
+	struct sockaddr_in	addr={0};
+	socklen_t addr_len=INET_ADDRSTRLEN;
 	do
 	{
 		addr_len = INET_ADDRSTRLEN;

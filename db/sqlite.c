@@ -127,7 +127,6 @@ static int free_reslut(void*ptr)
 void __init()
 {
 	printf(":P\n");
-//	get_profile_string(0,0,0,0,0);
 
 	/*
 	 * Can't use global var, or it will failed to start
@@ -152,7 +151,12 @@ void __init()
 
 	db->db_free_result = free_reslut;
 
-	printf("sqlite backend loaded");
+	db->db_open = opendb ;
+
+	dbfile = malloc(1024);
+
+	get_profile_string(cf,"sqlite","db",dbfile,1024);
+	printf("sqlite backend loaded\n");
 	sqlite3_initialize();
 	return;
 }

@@ -92,8 +92,7 @@ int distdb_rpc_execute_sql_bin(struct DISTDB_SQL_RESULT ** out,const char *sql,s
 	pdata->flag = executeflag;
 	memcpy(pdata->data, sql, length);
 
-	if (sendto(rpc_socket, buff, length + SIZE_RPC_HEADER + SIZE_EXECUTE_SQL_BIN ,
-			0,(struct sockaddr*) &server_addr, INET_ADDRSTRLEN) < 0)
+	if (send(rpc_socket, buff, length + SIZE_RPC_HEADER + SIZE_EXECUTE_SQL_BIN ,0) < 0)
 		return -1;
 
 	if (recvfrom(rpc_socket, buff, sizeof(buff), 0, (struct sockaddr*) &server_addr,&addrlen) < 0)

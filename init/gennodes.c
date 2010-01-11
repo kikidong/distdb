@@ -265,7 +265,7 @@ static void * accepts(void* null)
 	socklen_t	addr_len = INET_ADDRSTRLEN;
 	int sock_peer;
 	int a=0;
-	while (sock_peer = accept(g_socket,(struct sockaddr *) & addr,&addr_len))
+	while ((sock_peer = accept(g_socket, (struct sockaddr *) &addr, &addr_len)) > 0)
 	{
 		//lock
 		pthread_mutex_lock(&lock);

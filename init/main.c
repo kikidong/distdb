@@ -177,6 +177,7 @@ int main(int argc,char*argv[],char*env[])
 
 	//the big event loop (main program defined in ../src)
 	event_loop();
+	sleep(100000);
 
 	return 0;
 }

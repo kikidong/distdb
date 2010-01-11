@@ -60,7 +60,10 @@ int	load_plugins(const char * configfile)
 	get_profile_string(cf,"global","backend",backend,sizeof(backend));
 
 	so_file = strdup(PLUINGDIR);
-	so_file = realloc(so_file,strlen(so_file)+ strlen(backend) + 1 );
+
+	so_file = realloc(so_file,strlen(so_file)+ strlen(backend) + 20 );
+	strcat(so_file,backend);
+	strcat(so_file,".so");
 	dbplugin = dlopen(so_file, RTLD_NOW);
 	free(so_file);
 	if(!dbplugin)
@@ -90,6 +93,8 @@ int distdb_rpc_execute_sql_bin(struct DISTDB_SQL_RESULT ** out,const char *sql,s
 	void * db_private_ptr;
 
 	*out = 0;
+
+	db.db_open();
 
 	db.db_exec_sql(&db_private_ptr,sql,length);
 
