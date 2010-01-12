@@ -1,40 +1,6 @@
 
-============================================================
-=                                                          =
-=                      Linux 下编译安装                      =
-=                                                          =
-============================================================ 
+distdb	-- 分布式数据库抽象层
 
-要编译，使用 
-./configure 配置。
-你可能希望安装在标准位置，请使用 
-./configure --prefix=/usr --sysconfdir=/etc --localstatedir=/var
-
-
-检测完成后，执行 make
-make执行无错误，切换到 root 帐号 执行 make install
-这样会把  distdb 安装到 {prefix}/bin  （没有使用 --prefix 的话就是 /usr/local）
-配置文件在  /etc/distdb.conf  （没有使用 --prefix 的话就是 /etc ，使用了 --prefix 
-而没有使用 --sysconfdir 就是在 {prefix}/etc/distdb.cong 使用 --sysconfdir 就是在 ${sysconfdir}/distdb.conf ）
-nodes 文件的位置在配置文件中给出，默认为 /var/distdb/nodes.db
-
-并且安装头文件到 {prefix}/include/distdb （没有使用 --prefix 的话就是 /usr/local）
-
-使用 #include <distdb/distdb.h> 来包含头文件。
-
-
-============================================================
-=                                                          =
-=                     Windows 下编译安装                     =
-=                                                          =
-============================================================ 
-
-!!!!! HELP !!!!!!
-希望有人能建立 VC的项目文件，呵呵 :)
-
-请使用 mingw
-
-执行 mingw32-configure
-然后 make 
-接着 make install
+distdb 连接并使用本地数据库 (oracle (企业用户推荐) , mysql (开源用户推荐), sqlite3 (小型设备) )
+并试图在此之上抽象一个云。
 

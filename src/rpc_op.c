@@ -1,5 +1,5 @@
 /*
- * rpc_op.c - rpc operation
+ * rpc_op.c - RPC 操作抽象
  *
  * Copyright (C) 2009-2010 Kingstone, ltd
  *
@@ -14,6 +14,15 @@
  *
  * If you have any question with law suite, please contract 黄小克, the owner of
  * this company.
+ */
+
+/**
+ * @file roc_op.c
+ * @author microcai
+ *
+ * rpc_op.c 负责抽象化 RPC 调用的网络传输。
+ * 直接调用 src/database.c 里定义的同名 RPC 函数
+ * RPC 函数在 src/database.c 实现 和 lib/client.c (暂时) 存根
  */
 
 #ifdef HAVE_CONFIG_H
@@ -149,9 +158,14 @@ static void * rpc_loop_thread(void*p)
 		sendto(g_rpc_socket,buffer,recv_len,0,(struct sockaddr*)&addr,addr_len);
 	}while(1);
 }
-
+/**
+ * @brief rpc 循环
+ */
 int rpc_loop()
 {
+	/**
+	 * 将来将使用 udp ，所以代码可能会改变
+	 */
 	pthread_t pt;
 	return pthread_create(&pt,0,rpc_loop_thread,0);
 }
