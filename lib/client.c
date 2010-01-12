@@ -127,7 +127,7 @@ int distdb_rpc_free_result(struct DISTDB_SQL_RESULT *reslt)
 	struct rpc_packet_ret * rbuff = (typeof(rbuff))buff;
 	sbuff->rpc_call_id = DISTDB_RPC_FREE_RESLUT;
 	sbuff->call_seq = ++seq;
-	memcpy(sbuff->data,&reslt->sql_result,8);
+	memcpy(sbuff->data,reslt->sql_result,8);
 
 	if (sendto(rpc_socket, buff, 8 + SIZE_RPC_HEADER ,
 			0,(struct sockaddr*) &server_addr, INET_ADDRSTRLEN) < 0)
@@ -165,7 +165,7 @@ int distdb_rpc_fetch_result(struct DISTDB_SQL_RESULT * reslt,char ** result[])
 	sbuff->call_seq = ++seq;
 	struct rpc_sql_result * res = (typeof(res))rbuff->data;
 
-	memcpy(sbuff->data,&reslt->sql_result,sizeof(reslt));
+	memcpy(sbuff->data,reslt->sql_result,8);
 
 	if (sendto(rpc_socket, buff, 8 + SIZE_RPC_HEADER ,
 			0,(struct sockaddr*) &server_addr, INET_ADDRSTRLEN) < 0)

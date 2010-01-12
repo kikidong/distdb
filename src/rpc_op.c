@@ -48,13 +48,16 @@ static int rpc_call_exec_sql(char * data, size_t * retsize)
 static int rpc_free_result(char * data, size_t * retsize)
 {
 	*retsize = 0;
-	return distdb_rpc_free_result((DISTDB_SQL_RESULT*)data);
+	DISTDB_SQL_RESULT * reslt ;
+	memcpy(&reslt,data,sizeof(reslt));
+	return distdb_rpc_free_result(reslt);
 }
 
 static int rpc_fetch_result(char * data, size_t * retsize)
 {
 	int i,retval;
-	DISTDB_SQL_RESULT * reslt = *(DISTDB_SQL_RESULT**)data;
+	DISTDB_SQL_RESULT * reslt ;
+	memcpy(&reslt,data,sizeof(reslt));
 	struct rpc_sql_result * srst = (typeof(srst))data;
 	srst->number = reslt->columns;
 
