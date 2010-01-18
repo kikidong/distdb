@@ -103,8 +103,17 @@ int distdb_rpc_execute_sql_bin(struct DISTDB_SQL_RESULT ** out,const char *sql,s
 		return ret;
 	}
 
-	LIST_ADDTOTAIL(&results, &res->resultlist);
-	*out = res;
+	if (executeflag & DISTDB_RPC_EXECSQL_NORESULT)
+	{
+		if(res)
+			distdb_rpc_free_result(res);
+		*out = NULL;
+	}
+	else
+	{
+		LIST_ADDTOTAIL(&results, &res->resultlist);
+		*out = res;
+	}
 	return ret;
 }
 
