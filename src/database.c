@@ -117,6 +117,5 @@ int distdb_rpc_free_result(struct DISTDB_SQL_RESULT * p)
 {
 	db.db_free_result(p);
 	db.db_close(p);
-	LIST_DELETE_AT(&(p->resultlist));
 	free(p);
 }

@@ -24,3 +24,5 @@ distdb
 distdb.ini
 html/
 latex/
+doc/
+distdb.project

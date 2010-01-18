@@ -1,11 +1,13 @@
 
 AC_PREREQ([2.63])
+
 AC_INIT([distdb], [0.0.1], [microcai@fedoraproject.org])
 
-AC_CONFIG_SRCDIR([init/main.c])
 AC_CONFIG_HEADERS([config.h])
-
 AC_DEFINE(AUTHOR,"microcai",[Author of this software])
+
+AC_CONFIG_SRCDIR([init/main.c])
+
 AM_INIT_AUTOMAKE([-Wall -Werror])
 # Checks for programs.
 AC_PROG_CC

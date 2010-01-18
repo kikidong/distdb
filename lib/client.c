@@ -81,6 +81,19 @@ void distdb_rpc_disconnect()
 	rpc_socket = -1;
 }
 
+static int do_exchange(struct rpc_packet_call * call , struct rpc_packet_ret * ret)
+{
+	if (send(rpc_socket, call, call->len ,0) < 0)
+		return -1;
+		
+	if(read(rpc_socket,ret,RPC_PACKET_HEADER_SIZE))
+		return -1;
+	if (read(rpc_socket, ret + RPC_PACKET_HEADER_SIZE , ret->len - RPC_PACKET_HEADER_SIZE))
+		return -1;
+
+	return 0;
+}
+
 int distdb_rpc_execute_sql_bin(struct DISTDB_SQL_RESULT ** out,const char *sql,size_t length,int executeflag)
 {
 	socklen_t	addrlen = INET_ADDRSTRLEN;
@@ -93,11 +106,9 @@ int distdb_rpc_execute_sql_bin(struct DISTDB_SQL_RESULT ** out,const char *sql,s
 	pdata->length = length;
 	pdata->flag = executeflag;
 	memcpy(pdata->data, sql, length);
-
-	if (send(rpc_socket, buff, length + SIZE_RPC_HEADER + SIZE_EXECUTE_SQL_BIN ,0) < 0)
-		return -1;
-
-	if (recvfrom(rpc_socket, buff, sizeof(buff), 0, (struct sockaddr*) &server_addr,&addrlen) < 0)
+	sbuff->len = length + RPC_PACKET_HEADER_SIZE ;
+	
+	if(do_exchange(sbuff,rbuff))
 		return -1;
 
 	if(rbuff->call_seq != seq)
@@ -128,13 +139,9 @@ int distdb_rpc_free_result(struct DISTDB_SQL_RESULT *reslt)
 	sbuff->rpc_call_id = DISTDB_RPC_FREE_RESLUT;
 	sbuff->call_seq = ++seq;
 	memcpy(sbuff->data,reslt->sql_result,8);
-
-	if (sendto(rpc_socket, buff, 8 + SIZE_RPC_HEADER ,
-			0,(struct sockaddr*) &server_addr, INET_ADDRSTRLEN) < 0)
-		return -1;
-
-	if (recvfrom(rpc_socket, buff, sizeof(buff), 0, (struct sockaddr*) &server_addr,&addrlen) < 0)
-		return -1;
+	sbuff->len = 8 + RPC_PACKET_HEADER_SIZE;
+	
+	do_exchange(sbuff,rbuff);
 
 	if(rbuff->call_seq != seq)
 		return -1;
@@ -166,13 +173,10 @@ int distdb_rpc_fetch_result(struct DISTDB_SQL_RESULT * reslt,char ** result[])
 	struct rpc_sql_result * res = (typeof(res))rbuff->data;
 
 	memcpy(sbuff->data,reslt->sql_result,8);
+	
+	sbuff->len = 8 + RPC_PACKET_HEADER_SIZE;
 
-	if (sendto(rpc_socket, buff, 8 + SIZE_RPC_HEADER ,
-			0,(struct sockaddr*) &server_addr, INET_ADDRSTRLEN) < 0)
-		return -1;
-
-	if (recvfrom(rpc_socket, buff, sizeof(buff), 0, (struct sockaddr*) &server_addr,&addrlen) < 0)
-		return -1;
+	do_exchange(sbuff,rbuff);
 
 	if(rbuff->call_seq != seq)
 		return -1;

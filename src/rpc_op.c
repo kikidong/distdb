@@ -29,6 +29,7 @@
 #include "config.h"
 #endif
 
+#include <unistd.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -40,29 +41,40 @@
 #include "../include/rpc.h"
 #include "../include/db_def.h"
 
-static int rpc_call_exec_sql(char * data, size_t * retsize)
+static int rpc_call_exec_sql(struct rpc_clients* client,char * data, size_t * retsize)
 {
 	int ret;
 
 	struct execute_sql_bin * pdata = (typeof(pdata)) data;
+	struct DISTDB_SQL_RESULT * rest ;
 
-	ret = distdb_rpc_execute_sql_bin((DISTDB_SQL_RESULT**)data,pdata->data,pdata->length,pdata->flag);
+	ret = distdb_rpc_execute_sql_bin(&rest,pdata->data,pdata->length,pdata->flag);
+
+	memcpy(data,&rest,sizeof(void*));
 
 	*retsize = sizeof(void*);
+
+	if(rest) // 记录到结果链表中
+	{
+		LIST_ADDTOTAIL(& client->sql_results , & rest->resultlist );
+	}
 
 	return ret ;
 
 }
 
-static int rpc_free_result(char * data, size_t * retsize)
+static int rpc_free_result(struct rpc_clients* client, char * data, size_t * retsize)
 {
+	// 首先要查看有没有这样的东东吧？
+
 	*retsize = 0;
 	DISTDB_SQL_RESULT * reslt ;
 	memcpy(&reslt,data,sizeof(reslt));
+	LIST_DELETE_AT(&reslt->resultlist);
 	return distdb_rpc_free_result(reslt);
 }
 
-static int rpc_fetch_result(char * data, size_t * retsize)
+static int rpc_fetch_result(struct rpc_clients*client, char * data, size_t * retsize)
 {
 	int i,retval;
 	DISTDB_SQL_RESULT * reslt ;
@@ -94,8 +106,8 @@ static int rpc_fetch_result(char * data, size_t * retsize)
 	return retval;
 }
 
-static int rpc_stub(char * data, size_t * ret){	*ret = 0;return -1;}
-static int (* rpc_call_table[20])(char * data, size_t * ret)  =
+static int rpc_stub(struct rpc_clients*client, char * data, size_t * ret){	*ret = 0;return -1;}
+static int (* rpc_call_table[20])(struct rpc_clients*, char * data, size_t * ret)  =
 {
 		/*The first call.*/
 		rpc_stub,
@@ -123,51 +135,74 @@ static int (* rpc_call_table[20])(char * data, size_t * ret)  =
 		rpc_stub
 };
 
-static void rpc_dispatch(size_t * len,char * recv)
+static void rpc_dispatch(struct rpc_clients * client,size_t * len,char * recv)
 {
 	size_t return_size;
 
 	struct rpc_packet_call * pc = (typeof(pc))recv;
 	struct rpc_packet_ret * pr = (typeof(pr))recv;
-	return_size = *len - sizeof(*pc);
+	return_size = *len - RPC_PACKET_HEADER_SIZE ;
 	if( pc->rpc_call_id < 20)
-		pr->ret = (rpc_call_table[pc->rpc_call_id])(pc->data, &return_size);
+		pr->ret = (rpc_call_table[pc->rpc_call_id])(client,pc->data, &return_size);
 	else
 		{
 			pr->ret = -1;
 			return_size = 0;
 		}
-	* len = return_size + sizeof(*pr);
+	pr->len = return_size  + RPC_PACKET_HEADER_SIZE ;
+	* len = pr->len ;
 }
 
 /*
  * The big massive loop than handles RPC call.
- * Since it is UDP, we can use one socket to serve many clients
  */
-static void * rpc_loop_thread(void*p)
+void * rpc_loop_thread(void*p)
 {
-	char * buffer = malloc(4096*3); // MORE THAN ONE PACKET
-	size_t	recv_len;
-	struct sockaddr_in	addr={0};
-	socklen_t addr_len=INET_ADDRSTRLEN;
-	do
+	socklen_t			addr_len;
+	int					sock;
+	char*				buffer;
+	size_t				buffersize;
+	size_t				recv_len;
+	struct	rpc_packet_call * header;
+	struct rpc_clients	client;
+
+	addr_len = INET_ADDRSTRLEN;
+	memset(&client,0,sizeof(client));
+	client.sql_results.head = client.sql_results.tail = (struct list_node*)& (client.sql_results );
+
+	sock = accept(g_rpc_socket,(__SOCKADDR_ARG)&(client.addr),&addr_len);
+
+	//暂时不串起来所有的客户连接
+	// not schedule for implementation
+	//LIST_ADDTOTAIL()
+
+	buffersize = 4096*3;// MORE THAN ONE PACKET
+
+	buffer = malloc(buffersize);
+	memset(buffer,0,buffersize);
+
+	while(read(sock,buffer,RPC_PACKET_HEADER_SIZE))
 	{
-		addr_len = INET_ADDRSTRLEN;
-		recv_len = recvfrom(g_rpc_socket,buffer,4096*3,0,(struct sockaddr*)&addr,&addr_len);
-		rpc_dispatch(&recv_len,buffer);
-		sendto(g_rpc_socket,buffer,recv_len,0,(struct sockaddr*)&addr,addr_len);
-	}while(1);
-}
-/**
- * @brief rpc 循环
- */
-int rpc_loop()
-{
+		header = (typeof(header)) buffer ;
+		read(sock,buffer + RPC_PACKET_HEADER_SIZE , header->len);
+		rpc_dispatch(&client,&recv_len,buffer);
+		write(sock,buffer,recv_len);
+		memset(buffer,0,buffersize);
+	};
+	free(buffer);
+
 	/**
-	 * 将来将使用 udp ，所以代码可能会改变
+	 * 释放掉所有还没释放的数据
 	 */
-	pthread_t pt;
-	return pthread_create(&pt,0,rpc_loop_thread,0);
+	struct list_node * n;
+	for(n=client.sql_results.head ; n != client.sql_results.tail->next ; n = n->next)
+	{
+		distdb_rpc_free_result(LIST_HEAD(n,DISTDB_SQL_RESULT,resultlist));
+	}
+
+	//LIST_DELETE_AT( & client.clients);
+
+	return 0;
 }
 
 int open_rpc_socket()

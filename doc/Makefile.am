@@ -10,4 +10,3 @@ html-local:clean-local Doxyfile
 clean-local:
 	${RM} -r html latex
 	
-all-am:	html
