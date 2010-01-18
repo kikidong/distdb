@@ -42,4 +42,6 @@ int distdb_rpc_seek_result(struct DISTDB_SQL_RESULT *, int skip );
 int distdb_rpc_free_result(struct DISTDB_SQL_RESULT *);
 int distdb_rpc_result_info(struct DISTDB_SQL_RESULT *,int whatinfo , ... );
 
+====================================偶是华丽的分割线==哦耶==========================================
+
 

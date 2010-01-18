@@ -92,19 +92,42 @@ int distdb_rpc_execute_sql_bin(struct DISTDB_SQL_RESULT ** out,const char *sql,s
 
 	res = (typeof(res)) malloc(sizeof(struct DISTDB_SQL_RESULT));
 
-	db.db_open(res,executeflag & DISTDB_RPC_EXECSQL_ALLOWRECURSIVE);
-
-	ret = db.db_exec_sql(res,sql,length);
-
-	if ( ret )
+	if (!(executeflag & DISTDB_RPC_EXECSQL_NOLOCAL))
 	{
-		db.db_close(res);
-		free(res);
-		return ret;
+		//本地查找
+		db.db_open(res, executeflag & DISTDB_RPC_EXECSQL_ALLOWRECURSIVE);
+
+		ret = db.db_exec_sql(res, sql, length);
+
+		if (ret)
+		{
+			db.db_close(res);
+			free(res);
+			return ret;
+		} // 本地找都会出错，就不必麻烦远程电脑了
 	}
 
-	LIST_ADDTOTAIL(&results, &res->resultlist);
-	*out = res;
+	if (! ( executeflag & DISTDB_RPC_EXECSQL_NOSERVER))
+	{
+		// 还要到远程电脑上整啊.. 真是的.
+		//TODO 远程查找
+
+
+
+	}
+
+
+	if (executeflag & DISTDB_RPC_EXECSQL_NORESULT)
+	{
+		if(res)
+			distdb_rpc_free_result(res);
+		*out = NULL;
+	}
+	else
+	{
+		LIST_ADDTOTAIL(&results, &res->resultlist);
+		*out = res;
+	}
 	return ret;
 }
 
