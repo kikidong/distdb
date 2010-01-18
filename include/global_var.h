@@ -10,6 +10,7 @@
 
 #include "list.h"
 #include "nodes.h"
+#include "db_def.h"
 
 __BEGIN_DECLS
 
@@ -20,18 +21,19 @@ struct _groupmap{
 };
 
 struct db_ops{
-	int (*db_open)();
-	int (*db_exec_sql)(void ** db_private_ptr,const char*,int len);
-	int (*db_get_result)(void*	db_private_ptr);
-	int (*db_fetch_row)(void*	db_private_ptr,char ***);
-	int (*db_free_result)(void*	db_private_ptr);
-	int (*db_close)();
+	int (*db_open)(struct DISTDB_SQL_RESULT * res,int reopen);
+	int (*db_exec_sql)(struct DISTDB_SQL_RESULT*,const char*,int len);
+	int (*db_get_result)(struct DISTDB_SQL_RESULT*);
+	int (*db_fetch_row)(struct DISTDB_SQL_RESULT*,char ***);
+	int (*db_free_result)(struct DISTDB_SQL_RESULT*);
+	int (*db_close)(struct DISTDB_SQL_RESULT*);
 };
 
 LIST_SLOT_DECLARE(nodelist);
 LIST_SLOT_DECLARE(node_unconnectedlist);
 LIST_SLOT_DECLARE(node_connectedlist);
 
+extern	void*			  zeropage;
 extern int				  g_rpc_socket;
 extern	int				  g_socket;
 extern int				  groupcount;

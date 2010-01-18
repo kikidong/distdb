@@ -59,10 +59,25 @@ static inline size_t getline (char ** __lineptr,size_t * __n,FILE * __stream)
 #define ZEROWITHSIZE(structure)	memset(&structure,0,sizeof(structure));
 
 #endif
+
 /**
  * @brief 用4个int参数构造出ip地址类型，而不用管CPU大端小端
  */
-#define MAKEINET(s1,s2,s3,s4)	(((s1)& 0xFF)<< 24 ) |(((s2)& 0xFF)<< 16 )|(((s3)& 0xFF)<< 8 )|((s4)& 0xFF)
+static int inline MAKEINET(int s1,int s2,int s3,int s4)
+{
+	union {
+		unsigned char saddr[4];
+		unsigned int  addr;
+	}ip;
+
+	ip.saddr[0] = s1 ;
+	ip.saddr[1] = s2 ;
+	ip.saddr[2] = s3 ;
+	ip.saddr[3] = s4 ;
+
+	return ip.addr;
+}
+
 
 /**
  * @brief 本地回环地址 127.0.0.1
@@ -212,8 +227,6 @@ int distdb_rpc_free_result(struct DISTDB_SQL_RESULT *in);
 __END_DECLS
 
 #endif /* __DISTDB_H_ */
-
-
 
 /**//** @}*/ //
 

@@ -90,7 +90,10 @@ int	load_plugins(const char * configfile)
 	get_profile_string(cf,"global","backend",backend,sizeof(backend));
 
 	so_file = strdup(PLUINGDIR);
-	so_file = realloc(so_file,strlen(so_file)+ strlen(backend) + 1 );
+
+	so_file = realloc(so_file,strlen(so_file)+ strlen(backend) + 20 );
+	strcat(so_file,backend);
+	strcat(so_file,".so");
 	dbplugin = dlopen(so_file, RTLD_NOW);
 	free(so_file);
 	if(!dbplugin)
@@ -100,12 +103,6 @@ int	load_plugins(const char * configfile)
 		return -1;
 	}
 	close(cf);
-	return 0;
-}
-
-int opendb()
-{
-
 	return 0;
 }
 
@@ -119,28 +116,45 @@ int distdb_rpc_execute_sql_bin(struct DISTDB_SQL_RESULT ** out,const char *sql,s
 
 	void * db_private_ptr;
 
+	int ret;
+
 	*out = 0;
 
-	db.db_exec_sql(&db_private_ptr,sql,length);
+	res = (typeof(res)) malloc(sizeof(struct DISTDB_SQL_RESULT));
 
-	res = (typeof(res))malloc(sizeof(struct DISTDB_SQL_RESULT));
+	db.db_open(res,executeflag & DISTDB_RPC_EXECSQL_ALLOWRECURSIVE);
 
-	LIST_ADDTOTAIL(&results,&res->resultlist);
+	ret = db.db_exec_sql(res,sql,length);
 
-	*out = res;
-	return 0;
+	if ( ret )
+	{
+		db.db_close(res);
+		free(res);
+		return ret;
+	}
+
+	if (executeflag & DISTDB_RPC_EXECSQL_NORESULT)
+	{
+		if(res)
+			distdb_rpc_free_result(res);
+		*out = NULL;
+	}
+	else
+	{
+		LIST_ADDTOTAIL(&results, &res->resultlist);
+		*out = res;
+	}
+	return ret;
 }
 
 int distdb_rpc_fetch_result(struct DISTDB_SQL_RESULT * in,char ** result[])
 {
-	return db.db_fetch_row(in->db_private_ptr,result);
+	return db.db_fetch_row(in,result);
 }
 
 int distdb_rpc_free_result(struct DISTDB_SQL_RESULT * p)
 {
-	LIST_DELETE_AT(&p->resultlist);
-	db.db_free_result(p->db_private_ptr);
+	db.db_free_result(p);
+	db.db_close(p);
 	free(p);
 }
-
-

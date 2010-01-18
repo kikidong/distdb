@@ -35,16 +35,17 @@ static int	showversion;
 
 static struct parameter_tags param[] =
 {
-  {"-D", (char*)&nodaemon," -D\t\t DO NOT fork as a deamon",sizeof(nodaemon),2, BOOL_both},
-  {"--daemon", (char*)&setdaemon,"    --daemon\t run as a daemon(default)",sizeof(setdaemon),8, BOOL_both},
-  {"-f",config_file,0,sizeof(config_file),2,STRING},
-  {"--config",config_file," -f,--config\t specify alternative config file",sizeof(config_file),8,STRING},
-  {"--version", (char*)&showversion ,"    --version\t show the version of RuijieClient",sizeof(showversion),9, BOOL_both},
-  {0}
+	{"-D", (char*)&nodaemon," -D\t\t DO NOT fork as a deamon",sizeof(nodaemon),2, BOOL_both},
+	{"--daemon", (char*)&setdaemon,"    --daemon\t run as a daemon(default)",sizeof(setdaemon),8, BOOL_both},
+	{"-f",config_file,0,sizeof(config_file),2,STRING},
+	{"--config",config_file," -f,--config\t specify alternative config file",sizeof(config_file),8,STRING},
+	{"--version", (char*)&showversion ,"    --version\t show the version of RuijieClient",sizeof(showversion),9, BOOL_both},
+	{0}
 };
 
 
-struct cfg_progs{
+struct cfg_progs
+{
 	/*
 	 * node file that use to connect
 	 */
@@ -66,20 +67,21 @@ static int getconfig(struct cfg_progs * cfg,int argc, char * argv[])
 {
 	char	keyval[128];
 	ParseParameters(&argc,&argv,param);
-	if(showversion)
+	if (showversion)
 	{
 		printf("%s\n",VERSION);
 		exit(EXIT_SUCCESS);
 	}
 	FILE * cfile = fopen(config_file,"r");
-	if(!cfile){
+	if (!cfile)
+	{
 		fprintf(stderr,"Can not open %s.!\n",config_file);
 		exit(EXIT_FAILURE);
 	}
 	if (cfg->startup_node_file)
 		free((void*)cfg->startup_node_file);
 	cfg->startup_node_file = malloc(1024);
-	if(cfg->url_nodefile)
+	if (cfg->url_nodefile)
 		free(cfg->url_nodefile);
 	cfg->url_nodefile = malloc(8192);
 
@@ -96,17 +98,17 @@ static int download_node_file(const char * url,const char * file, int reason)
 {
 	size_t ret;
 	char	line[1024];
-	if(reason)
+	if (reason)
 		snprintf(line,sizeof(line),"curl '%s' 2>/dev/null",url);
 	else
 		snprintf(line,sizeof(line),"curl -z '%s' '%s' 2>/dev/null",file,url);
-		FILE * fn = popen(line,"r");
+	FILE * fn = popen(line,"r");
 	ret = fread(line,sizeof(char),sizeof(line)/sizeof(char),fn);
-	if(ret)
+	if (ret)
 	{
 		FILE *f;
 		if (reason) // broken
-			 f= fopen(file,"w");
+			f= fopen(file,"w");
 		else
 		{
 			char * tmpfile = strdup(file);
@@ -121,13 +123,13 @@ static int download_node_file(const char * url,const char * file, int reason)
 		}
 
 		ret = fwrite(line,sizeof(char),ret,f);
-		while(ret)
+		while (ret)
 		{
 			ret = fread(line,sizeof(char),sizeof(line)/sizeof(char),fn);
 			ret = fwrite(line,sizeof(char),ret,f);
 		}
 		fclose(f);
-		if(!reason)
+		if (!reason)
 		{
 			char * tmpfile = strdup(file);
 			strcat(tmpfile,".tmp");
@@ -146,14 +148,14 @@ int main(int argc,char*argv[],char*env[])
 	getconfig(&cfg_progs, argc, argv);
 
 	if (download_node_file(cfg_progs.url_nodefile, cfg_progs.startup_node_file,
-			check_node_file(cfg_progs.startup_node_file)))
+	                       check_node_file(cfg_progs.startup_node_file)))
 	{
 		printf("unable to recover from the nodes.db crash\n");
 		exit(EXIT_FAILURE);
 	}
 
 	// read nodes
-	if(read_nodes(cfg_progs.startup_node_file))
+	if (read_nodes(cfg_progs.startup_node_file))
 	{
 		printf("unable to read %s\n",cfg_progs.startup_node_file);
 		exit(EXIT_FAILURE);
@@ -167,8 +169,6 @@ int main(int argc,char*argv[],char*env[])
 
 	//listen on local RPC port
 	open_rpc_socket();
-
-	rpc_loop();
 
 	//the big event loop (main program defined in ../src)
 	event_loop();

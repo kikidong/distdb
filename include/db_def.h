@@ -5,9 +5,9 @@
  *
  * Written by microcai in 2009-2010
  *
- * This software is lisenced under the Kingstone mid-ware Lisence.
+ * This software is licensed under the Kingstone mid-ware License.
  *
- * For more infomation see COPYING file shipped with this software.
+ * For more information see COPYING file shipped with this software.
  *
  * If you have any question with this software, please contract microcai, the
  * original writer of this software.
@@ -26,9 +26,10 @@ struct DISTDB_SQL_RESULT{
 	time_t	time;	// The time that request the execution
 	DEFINE_LIST(resultlist); // The results must be linked together. :)
 	struct	the_db_ops * db; // the db opetator
-	void*	db_private_ptr;
+	int		needclose;		 // set 1 if need close the db
 	// the severs that receives the same requeset
 	int		columns; // columns that may return
+	void*	db_private_ptr;
 };
 
 __END_DECLS

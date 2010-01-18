@@ -1,7 +1,7 @@
 
 [global]
 
-nodes_file =  @NODES_FILE@
+nodes_file =  @localstatedir@/nodes.db
 
 nodes_url =  @NODES_URL@ 
 
@@ -28,7 +28,7 @@ nodes_url =  @NODES_URL@
 
 [sqlite]
 
-#db = @localstatedir@/distdb.sqlite
+db = @localstatedir@/distdb.sqlite
 
 [mysql]
 

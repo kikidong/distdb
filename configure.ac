@@ -1,19 +1,17 @@
 
 AC_PREREQ([2.63])
+
 AC_INIT([distdb], [0.0.1], [microcai@fedoraproject.org])
 
-AC_CONFIG_SRCDIR([init/main.c])
 AC_CONFIG_HEADERS([config.h])
-
 AC_DEFINE(AUTHOR,"microcai",[Author of this software])
+
+AC_CONFIG_SRCDIR([init/main.c])
+
 AM_INIT_AUTOMAKE([-Wall -Werror])
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_INSTALL
-
-build_java=false
-AC_CHECK_PROG([JAVAC],[javac],[javac])
-AC_CHECK_PROG([JAVAH],[javah],[javah])
 
 
 #PKG_PROG_PKG_CONFIG
@@ -109,16 +107,6 @@ AM_CONDITIONAL([WITH_MYSQL], [ test "x$have_mysql" = "xyes" ] )
 
 # Checks for header files.
 
-
-AS_IF([test "x$JAVAC" = "xjavac"],[
-		AC_CHECK_HEADER([jni.h],[build_java=true],
-			[
-			AC_MSG_NOTICE([java compilter found, but libgcj-devel not found!,java binding will not be build])			
-			])
-	])
-
-AM_CONDITIONAL(BUILD_JAVA,[$build_java])
-
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_INLINE
 
@@ -147,7 +135,7 @@ AC_CHECK_HEADERS([stdint.h])
 
 AC_DEFINE_UNQUOTED(CONF_FILE,"${with_config}",[default config file])
 
-AS_IF( [ test "${localstatedir}" = '$'"{prefix}/var"],[localstatedir=/var])
+AS_IF( [ test "${localstatedir}" = '$'"{prefix}/var"],[localstatedir=/var/distdb])
 
 AS_IF( [ test "${sysconfdir}" = '$'"{prefix}/etc"],[sysconfdir=/etc])
 
@@ -155,7 +143,6 @@ AS_IF( [ test "${libdir}" = '$'"{exec_prefix}/lib" ], [
 	AS_IF( [test "${prefix}" = "NONE"], [libdir=/usr/local/lib] , [libdir=${prefix}/lib]   )
 	] )
 
-AC_SUBST(NODES_FILE,[${localstatedir}/distdb/nodes.db])
 AC_SUBST(NODES_URL,[${with_nodes_url}])
 LIB_VERSION_MAJOR=0
 LIB_VERSION_MINOR=0
@@ -164,7 +151,7 @@ AC_SUBST(LIB_VERSION,"${LIB_VERSION_MAJOR}:${LIB_VERSION_CURRENT}:${LIB_VERSION_
 AC_DEFINE(RPC_DEFAULT_PORT,3721,[default port])
 AC_DEFINE(DISTDB_DEFAULT_PORT,3722,[default port])
 
-AC_DEFINE_UNQUOTED(PLUINGDIR,"${libdir}/distdb",[The dir that hold plugin])
+AC_DEFINE_UNQUOTED(PLUINGDIR,"${libdir}/distdb/",[The dir that hold plugin])
 
 #OUTPUT files
 AC_CONFIG_FILES([				 
@@ -174,8 +161,6 @@ AC_CONFIG_FILES([
                  lib/Makefile
                  init/Makefile
                  db/Makefile
-                 bindings/Makefile
-                 bindings/java/Makefile
                  doc/Makefile
                  doc/Doxyfile
                  Makefile

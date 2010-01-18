@@ -27,7 +27,6 @@ struct list_node{
 typedef struct list_slot{
 	struct list_node * tail;
 	struct list_node * head;
-
 }list_slot;
 
 /*
