@@ -26,6 +26,7 @@
 #include <pthread.h>
 #include "../include/global_var.h"
 #include "../include/rpc.h"
+#include "../include/communication.h"
 
 static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER ;
 
@@ -124,19 +125,35 @@ int event_loop()
 	pfd[0].events = pfd[1].events = POLLERR| POLLHUP | POLLIN ;
 	while( (ret = poll(pfd,2,-1)) )
 	{
-		while(ret )
+		while( ret--  )
 		{
-			if(pfd[ret-1].fd == g_socket)
+			if(pfd[ret].fd == g_socket)
 			{
 				//! 新开一个线程来处理
 				pthread_t	thread;
 				pthread_create(&thread,0,master_service,0);
-			}else if (pfd[ret-1].fd == g_rpc_socket)
+			}else if (pfd[ret].fd == g_rpc_socket)
 			{ //! 新开一个线程来处理新RPC客户的连接
 				pthread_t	thread;
-				pthread_create(&thread,0,rpc_loop_thread,0);
+
+				struct	paramter{
+					struct sockaddr_in addr;
+					int 	sock;
+					socklen_t	addr_len;
+				}*paramter = (typeof(paramter)) malloc(sizeof(*paramter));
+
+				paramter->addr_len = INET_ADDRSTRLEN ;
+
+				paramter->sock = accept(g_rpc_socket,(__SOCKADDR_ARG)&paramter->addr,&paramter->addr_len);
+				if(paramter->sock >0)
+					pthread_create(&thread,0,rpc_loop_thread,paramter);
+				else
+					free(paramter);
 			}
 		}
+		pfd[0].fd = g_rpc_socket ;
+		pfd[1].fd = g_socket ;
+		pfd[0].events = pfd[1].events = POLLERR| POLLHUP | POLLIN ;
 	}
 
 	return 0;

@@ -69,7 +69,7 @@ int distdb_rpc_connectto(const char * server)
 			return -1;
 		}
 	}
-	rpc_socket = socket(server_addr.sin_family,SOCK_DGRAM,0);
+	rpc_socket = socket(server_addr.sin_family,SOCK_STREAM,0);
 	if(rpc_socket <= 0)
 		return -1;
 	return connect(rpc_socket,(struct sockaddr*)&server_addr,INET_ADDRSTRLEN);
@@ -85,10 +85,13 @@ static int do_exchange(struct rpc_packet_call * call , struct rpc_packet_ret * r
 {
 	if (send(rpc_socket, call, call->len ,0) < 0)
 		return -1;
-		
-	if(read(rpc_socket,ret,RPC_PACKET_HEADER_SIZE))
+
+	memset(call,0,call->len);
+
+	if (recv(rpc_socket, ret, RPC_PACKET_HEADER_SIZE,MSG_PEEK|MSG_NOSIGNAL) < 0)
 		return -1;
-	if (read(rpc_socket, ret + RPC_PACKET_HEADER_SIZE , ret->len - RPC_PACKET_HEADER_SIZE))
+
+	if (recv(rpc_socket, ret , ret->len,0) < 0)
 		return -1;
 
 	return 0;
@@ -97,17 +100,21 @@ static int do_exchange(struct rpc_packet_call * call , struct rpc_packet_ret * r
 int distdb_rpc_execute_sql_bin(struct DISTDB_SQL_RESULT ** out,const char *sql,size_t length,int executeflag)
 {
 	socklen_t	addrlen = INET_ADDRSTRLEN;
+
 	char	buff[8192];
+
 	struct rpc_packet_call * sbuff = (typeof(sbuff))buff;
 	struct rpc_packet_ret * rbuff = (typeof(rbuff))buff;
+	struct DISTDB_SQL_RESULT	* forout = NULL;
+
 	sbuff->rpc_call_id = DISTDB_RPC_EXECUTE_SQL_BIN;
 	sbuff->call_seq = ++seq;
 	struct execute_sql_bin * pdata = (typeof(pdata))(sbuff->data);
 	pdata->length = length;
 	pdata->flag = executeflag;
 	memcpy(pdata->data, sql, length);
-	sbuff->len = length + RPC_PACKET_HEADER_SIZE ;
-	
+	sbuff->len = pdata->length + RPC_PACKET_HEADER_SIZE + SIZE_EXECUTE_SQL_BIN  ;
+
 	if(do_exchange(sbuff,rbuff))
 		return -1;
 
@@ -115,12 +122,11 @@ int distdb_rpc_execute_sql_bin(struct DISTDB_SQL_RESULT ** out,const char *sql,s
 		return -1;
 	if(memcmp(rbuff->data,zeropage,8) !=0)
 	{
-		*out = (DISTDB_SQL_RESULT*)malloc(sizeof(struct DISTDB_SQL_RESULT));
-		(*out)->result = NULL;
-		memcpy((*out)->sql_result,rbuff->data,8);
+		forout = (DISTDB_SQL_RESULT*)malloc(sizeof(struct DISTDB_SQL_RESULT));
+		forout->result = NULL;
+		memcpy(forout->sql_result,buff + 12,8);
 	}
-	else
-		*out = 0;
+	*out = forout ;
 	return rbuff->ret;
 }
 
@@ -140,7 +146,7 @@ int distdb_rpc_free_result(struct DISTDB_SQL_RESULT *reslt)
 	sbuff->call_seq = ++seq;
 	memcpy(sbuff->data,reslt->sql_result,8);
 	sbuff->len = 8 + RPC_PACKET_HEADER_SIZE;
-	
+
 	do_exchange(sbuff,rbuff);
 
 	if(rbuff->call_seq != seq)
@@ -164,7 +170,6 @@ int distdb_rpc_free_result(struct DISTDB_SQL_RESULT *reslt)
 int distdb_rpc_fetch_result(struct DISTDB_SQL_RESULT * reslt,char ** result[])
 {
 	int i;
-	socklen_t	addrlen = INET_ADDRSTRLEN;
 	char	buff[8192];
 	struct rpc_packet_call * sbuff = (typeof(sbuff))buff;
 	struct rpc_packet_ret * rbuff = (typeof(rbuff))buff;
@@ -173,7 +178,7 @@ int distdb_rpc_fetch_result(struct DISTDB_SQL_RESULT * reslt,char ** result[])
 	struct rpc_sql_result * res = (typeof(res))rbuff->data;
 
 	memcpy(sbuff->data,reslt->sql_result,8);
-	
+
 	sbuff->len = 8 + RPC_PACKET_HEADER_SIZE;
 
 	do_exchange(sbuff,rbuff);

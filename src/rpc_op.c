@@ -28,8 +28,9 @@
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
-
+#include <sys/types.h>
 #include <unistd.h>
+#include <sys/socket.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -46,15 +47,16 @@ static int rpc_call_exec_sql(struct rpc_clients* client,char * data, size_t * re
 	int ret;
 
 	struct execute_sql_bin * pdata = (typeof(pdata)) data;
-	struct DISTDB_SQL_RESULT * rest ;
+	struct DISTDB_SQL_RESULT * rest = 0;
 
-	ret = distdb_rpc_execute_sql_bin(&rest,pdata->data,pdata->length,pdata->flag);
+	ret = distdb_rpc_execute_sql_bin(&rest,
+			pdata->data,pdata->length,pdata->flag);
 
-	memcpy(data,&rest,sizeof(void*));
+	memcpy(data,&(rest),8);
 
 	*retsize = sizeof(void*);
 
-	if(rest) // 记录到结果链表中
+	if(!ret) // 记录到结果链表中
 	{
 		LIST_ADDTOTAIL(& client->sql_results , & rest->resultlist );
 	}
@@ -156,9 +158,8 @@ static void rpc_dispatch(struct rpc_clients * client,size_t * len,char * recv)
 /*
  * The big massive loop than handles RPC call.
  */
-void * rpc_loop_thread(void*p)
+void * rpc_loop_thread(void*__paramter)
 {
-	socklen_t			addr_len;
 	int					sock;
 	char*				buffer;
 	size_t				buffersize;
@@ -166,11 +167,23 @@ void * rpc_loop_thread(void*p)
 	struct	rpc_packet_call * header;
 	struct rpc_clients	client;
 
-	addr_len = INET_ADDRSTRLEN;
+	struct	paramter{
+		struct sockaddr_in addr;
+		int 	sock;
+		socklen_t	addr_len;
+	}*paramter = (typeof(paramter)) __paramter;
+
 	memset(&client,0,sizeof(client));
 	client.sql_results.head = client.sql_results.tail = (struct list_node*)& (client.sql_results );
+	client.addr = paramter->addr;
+	sock = paramter->sock ;
 
-	sock = accept(g_rpc_socket,(__SOCKADDR_ARG)&(client.addr),&addr_len);
+	free(__paramter);
+
+/*	recv_len = 1;
+	SO_DEBUG
+	setsockopt(sock, SOL_SOCKET, SO_NOSIGPIPE, (void *) &recv_len, sizeof(int));
+*/
 
 	//暂时不串起来所有的客户连接
 	// not schedule for implementation
@@ -181,12 +194,13 @@ void * rpc_loop_thread(void*p)
 	buffer = malloc(buffersize);
 	memset(buffer,0,buffersize);
 
-	while(read(sock,buffer,RPC_PACKET_HEADER_SIZE))
+	while(recv(sock,buffer,RPC_PACKET_HEADER_SIZE,MSG_NOSIGNAL|MSG_PEEK))
 	{
 		header = (typeof(header)) buffer ;
-		read(sock,buffer + RPC_PACKET_HEADER_SIZE , header->len);
+		recv_len = recv(sock,buffer , header->len , MSG_NOSIGNAL);
 		rpc_dispatch(&client,&recv_len,buffer);
-		write(sock,buffer,recv_len);
+		if(send(sock,buffer,recv_len,MSG_NOSIGNAL) < 0)
+			break;
 		memset(buffer,0,buffersize);
 	};
 	free(buffer);
@@ -211,9 +225,8 @@ int open_rpc_socket()
 	struct sockaddr_in addr = {0};
 	addr.sin_family = AF_INET;
 	addr.sin_port = RPC_DEFAULT_PORT;
-	g_rpc_socket = socket(AF_INET,SOCK_DGRAM,0);
+	g_rpc_socket = socket(AF_INET,SOCK_STREAM,0);
 	setsockopt(g_rpc_socket,SOL_SOCKET,SO_REUSEADDR,&opt,sizeof(opt));
 	bind(g_rpc_socket,(struct sockaddr*)&addr,INET_ADDRSTRLEN);
-	listen(g_rpc_socket,2);
-	return -1;
+	return listen(g_rpc_socket,2);
 }
