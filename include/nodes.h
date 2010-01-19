@@ -51,6 +51,6 @@ static inline int SAME_PEER(struct sockaddr_in	*peer1,struct sockaddr_in *	peer2
 {
 	return peer1->sin_addr.s_addr == peer2->sin_addr.s_addr;
 }
-
+void* service_loop(struct nodes * clientnode);
 __END_DECLS
 #endif /* NODES_H_ */

@@ -21,11 +21,9 @@
 #include <pthread.h>
 #include "../include/global_var.h"
 #include "../include/rpc.h"
+#include "../include/communication.h"
 
 static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER ;
-
-
-
 
 static int accepts(struct nodes ** pn)
 {
@@ -82,6 +80,22 @@ static int accepts(struct nodes ** pn)
 	return -1;
 }
 
+/**
+ * 主要的进行服务器的函数
+ */
+void* service_loop(struct nodes * clientnode)
+{
+	int sock;
+	sock = clientnode->sock_peer ;
+
+
+
+
+
+	while(1){}
+	return 0;
+}
+
 
 /**
  * 这个函数完成对到来的连接进行的。
@@ -93,15 +107,7 @@ static void* master_service(void*not_used)
 	if (accepts(&clientnode))
 		return 0;
 	// ok ,开始进行服务吧
-
-
-
-	while(1)
-	{
-
-	}
-
-
+	return service_loop(clientnode);
 }
 
 int event_loop()
@@ -114,19 +120,35 @@ int event_loop()
 	pfd[0].events = pfd[1].events = POLLERR| POLLHUP | POLLIN ;
 	while( (ret = poll(pfd,2,-1)) )
 	{
-		while(ret )
+		while( ret--  )
 		{
-			if(pfd[ret-1].fd == g_socket)
+			if(pfd[ret].fd == g_socket)
 			{
 				//! 新开一个线程来处理
 				pthread_t	thread;
 				pthread_create(&thread,0,master_service,0);
-			}else if (pfd[ret-1].fd == g_rpc_socket)
+			}else if (pfd[ret].fd == g_rpc_socket)
 			{ //! 新开一个线程来处理新RPC客户的连接
 				pthread_t	thread;
-				pthread_create(&thread,0,rpc_loop_thread,0);
+
+				struct	paramter{
+					struct sockaddr_in addr;
+					int 	sock;
+					socklen_t	addr_len;
+				}*paramter = (typeof(paramter)) malloc(sizeof(*paramter));
+
+				paramter->addr_len = INET_ADDRSTRLEN ;
+
+				paramter->sock = accept(g_rpc_socket,(__SOCKADDR_ARG)&paramter->addr,&paramter->addr_len);
+				if(paramter->sock >0)
+					pthread_create(&thread,0,rpc_loop_thread,paramter);
+				else
+					free(paramter);
 			}
 		}
+		pfd[0].fd = g_rpc_socket ;
+		pfd[1].fd = g_socket ;
+		pfd[0].events = pfd[1].events = POLLERR| POLLHUP | POLLIN ;
 	}
 
 	return 0;

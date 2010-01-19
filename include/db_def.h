@@ -1,19 +1,12 @@
 /*
  * db_def.h - define db related structure
  *
- * Copyright (C) 2009-2010 Kingstone, Ltd.
+ * This software is Public Domain
  *
- * Written by microcai in 2009-2010
- *
- * This software is licensed under the Kingstone mid-ware License.
- *
- * For more information see COPYING file shipped with this software.
+ * For more infomation see COPYING file shipped with this software.
  *
  * If you have any question with this software, please contract microcai, the
  * original writer of this software.
- *
- * If you have any question with law suite, please contract 黄小克 , the owner of
- * this company.
  */
 
 #ifndef DB_DEF_H_

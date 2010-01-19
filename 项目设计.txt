@@ -41,4 +41,19 @@ int distdb_rpc_seek_result(struct DISTDB_SQL_RESULT *, int skip );
 int distdb_rpc_free_result(struct DISTDB_SQL_RESULT *);
 int distdb_rpc_result_info(struct DISTDB_SQL_RESULT *,int whatinfo , ... );
 
+====================================偶是华丽的分割线==哦耶==========================================
+
+远程查找操作详解
+
+在进行远程操作的时候，distdb 向连接到的每个节点发送查找请求 (暂时的，以后可能会进行优化，只向最有可
+能拥有数据的节点发出查找请求,找不到了再进行广播)。
+
+收到查询请求后， distdb 进行本地查询，将查询到的结果依次发送回去。
+客户端此时可以使用  distdb_rpc_wait_result 进行等待。 等待一定的结果集的出现。
+
+distdb 无法过滤相同记录的多次返回。因为这是不可能做到的。除非 hack 进你的数据结构，添加一些字段进行
+识别。但是，这又并不通常是你所期望的。所以，最好的办法就是 ... 偶不整了嘛！
+
+
+
 

@@ -21,8 +21,7 @@ libtool
 *.la
 *.lo
 distdb
-distdb.ini
+distdb.*
 html/
 latex/
 doc/
-distdb.project
