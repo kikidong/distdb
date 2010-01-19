@@ -247,6 +247,7 @@ static int connectto(struct sockaddr_in * peer)
  */
 static int connect_peer(struct nodes * node)
 {
+	pthread_t pt;
 	//connect
 	node->sock_peer = connectto(&node->peer);
 	//link to connected list
@@ -255,6 +256,7 @@ static int connect_peer(struct nodes * node)
 	LIST_ADDTOTAIL(&node_connectedlist,& node->connectedlist);
 	LIST_DELETE_AT(&node->unconnectedlist);
 	node->refcount --;
+	pthread_create(&pt,0,(void *(*) (void *))service_loop,node);
 }
 
 int connect_nodes()

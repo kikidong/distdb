@@ -29,9 +29,6 @@
 
 static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER ;
 
-
-
-
 static int accepts(struct nodes ** pn)
 {
 	//只许可接受定义的节点的连接，希望将来可以改变这一事实。
@@ -87,6 +84,22 @@ static int accepts(struct nodes ** pn)
 	return -1;
 }
 
+/**
+ * 主要的进行服务器的函数
+ */
+void* service_loop(struct nodes * clientnode)
+{
+	int sock;
+	sock = clientnode->sock_peer ;
+
+
+
+
+
+	while(1){}
+	return 0;
+}
+
 
 /**
  * 这个函数完成对到来的连接进行的。
@@ -98,15 +111,7 @@ static void* master_service(void*not_used)
 	if (accepts(&clientnode))
 		return 0;
 	// ok ,开始进行服务吧
-
-
-
-	while(1)
-	{
-
-	}
-
-
+	return service_loop(clientnode);
 }
 
 int event_loop()
