@@ -22,8 +22,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <fcntl.h>
-#include <errno.h>
 #include <pthread.h>
 #include <sys/socket.h>
 
@@ -222,69 +220,3 @@ int read_nodes(const char * nodes_file)
 	return ret;
 }
 
-
-/*
- * connet to ip and return the fd
- */
-static int connectto(struct sockaddr_in * peer)
-{
-	int ret;
-	int sk = socket(peer->sin_family,SOCK_STREAM,0);
-
-	fcntl(sk,F_SETFL,fcntl(sk,F_GETFL)|O_NONBLOCK);
-
-	if(sk > 0)
-		ret =  connect(sk,(struct sockaddr*)peer,INET_ADDRSTRLEN);
-	else
-		return -1;
-	if(ret && errno != EINPROGRESS)
-		close(sk);
-	return ret;
-}
-
-/*
- * connect to peers
- */
-static int connect_peer(struct nodes * node)
-{
-	pthread_t pt;
-	//connect
-	node->sock_peer = connectto(&node->peer);
-	//link to connected list
-
-	node->refcount ++;
-	LIST_ADDTOTAIL(&node_connectedlist,& node->connectedlist);
-	LIST_DELETE_AT(&node->unconnectedlist);
-	node->refcount --;
-	pthread_create(&pt,0,(void *(*) (void *))service_loop,node);
-}
-
-int connect_nodes()
-{
-	//struct nodes * n;
-	pthread_t pt;
-
-	struct list_node * n;
-
-	//listen on local ports
-	int opt = 1;
-	struct sockaddr_in addr = {0};
-	addr.sin_family = AF_INET;
-	addr.sin_port = RPC_DEFAULT_PORT;
-	g_socket = socket(AF_INET,SOCK_DGRAM,0);
-	setsockopt(g_socket,SOL_SOCKET,SO_REUSEADDR,&opt,sizeof(opt));
-	bind(g_socket,(struct sockaddr*)&addr,INET_ADDRSTRLEN);
-	listen(g_socket,20);
-
-//	pthread_create(&pt, 0, accepts, 0);
-
-	for (n = node_unconnectedlist.head ; n  != node_unconnectedlist.tail->next  ; n = n->next)
-	{
-	//	pthread_mutex_lock(&lock);
-		if(! LIST_HEAD(n,nodes,unconnectedlist)->sock_peer) // only connect unconnected.
-			connect_peer(LIST_HEAD(n,nodes,unconnectedlist));
-		//else n has been off link. Thank good ness, the n->next still works
-	//	pthread_mutex_unlock(&lock);
-	}
-	return 0;
-}
