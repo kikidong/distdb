@@ -255,7 +255,10 @@ enum executeflag{
 
 /**
  * @brief 执行SQL语句
- * @param[in]
+ * @param[in] nodes 需要发送请求执行的节点列表
+ * 				如果为 NULL 就是所有已经连接的节点
+ * 				节点列表最后一项用 NULL 结尾
+ *
  * @param[out] out 查询结果句柄
  * @param[in] sql 查询语句 \n
  * 				必须是NULL结束的字符串 see distdb_rpc_execute_sql_bin
@@ -267,6 +270,9 @@ int distdb_execute_sql_str(DISTDB_NODE * nodes,struct DISTDB_SQL_RESULT ** out,c
 
 /**
  * @brief distdb_rpc_execute_sql_bin 执行SQL语句
+ * @param[in] nodes 需要发送请求执行的节点列表
+ * 				如果为 NULL 就是所有已经连接的节点
+ * 				节点列表最后一项用 NULL 结尾
  * @param[out] out 查询结果句柄
  * @param[in] sql 查询语句 允许包含NULL \n
  * 					@see distdb_rpc_execute_sql_str

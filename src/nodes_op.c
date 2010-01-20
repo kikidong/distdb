@@ -37,6 +37,45 @@
 #include "../include/rpc.h"
 #include "../include/db_def.h"
 
+ /**
+ * @brief 执行登录
+ *
+ * 成功登录返回 0，登录失败返回 -1
+ */
+static int distdb_login(struct nodes * node)
+{
+	char sendbuf[1024];
+	static char type[][16] = { { "client-only" },{ "server" } };
+	int len;
+
+	char ret_ok[16];
+	char ret_name[33];
+	char ret_type[32];
+	int ret_groupid;
+
+
+	len = sprintf(sendbuf, "ACTION:LOGIN NAME:%s TYPE:%s GROUP:%d\n\n",
+			node_info.servername, type[node_type], node_info.groupid);
+	send(node->sock_peer, sendbuf, len, 0);
+
+	//FIXME 加入超时机制
+	recv(node->sock_peer,sendbuf,sizeof(sendbuf),0);
+
+	if (sscanf(sendbuf, "LOGIN:%15[^ ] NAME:%32[^ ] TYPE:%31[^ ] GROUP:%d\n\n",
+			ret_ok, ret_name, ret_type, &ret_groupid) != 4)
+		return -1;
+	if(ret_ok[0]!='O' || ret_ok[1]!='K')
+		return -1;
+
+	if (strcmp(ret_type, "server") == 0)
+		node->type = 0;
+	else
+		node->type = 1;
+
+	node->groupid = ret_groupid;
+	node->lastactive = time(0);
+	return 0;
+}
 
 DISTDB_NODE distdb_connect(const char* server)
 {
@@ -147,42 +186,13 @@ int peer_lookup_same(in_addr_t ip)
 	return 0;
 }
 
-/**
- * @brief 执行登录
- *
- * 成功登录返回 0，登录失败返回 -1
- */
-int distdb_login(struct nodes * node)
+void distdb_disconnect(DISTDB_NODE _node)
 {
-	char sendbuf[1024];
-	static char type[][16] = { { "client-only" },{ "server" } };
-	int len;
-
-	char ret_ok[16];
-	char ret_name[33];
-	char ret_type[32];
-	int ret_groupid;
-
-
-	len = sprintf(sendbuf, "ACTION:LOGIN NAME:%s TYPE:%s GROUP:%d\n\n",
-			node_info.servername, type[node_type], node_info.groupid);
-	send(node->sock_peer, sendbuf, len, 0);
-
-	//FIXME 加入超时机制
-	recv(node->sock_peer,sendbuf,sizeof(sendbuf),0);
-
-	if (sscanf(sendbuf, "LOGIN:%15[^ ] NAME:%32[^ ] TYPE:%31[^ ] GROUP:%d\n\n",
-			ret_ok, ret_name, ret_type, &ret_groupid) != 4)
-		return -1;
-	if(ret_ok[0]!='O' || ret_ok[1]!='K')
-		return -1;
-
-	if (strcmp(ret_type, "server") == 0)
-		node->type = 0;
-	else
-		node->type = 1;
-
-	node->groupid = ret_groupid;
-	node->lastactive = time(0);
-	return 0;
+	struct nodes * node = (typeof(node))_node;
+	pthread_mutex_lock(&nodelist_lock);
+	close(node->sock_peer);
+	LIST_DELETE_AT(&node->nodelist);
+	node->freeer(node);
+	pthread_mutex_unlock(&nodelist_lock);
 }
+

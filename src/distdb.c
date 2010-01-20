@@ -28,6 +28,8 @@
 
 #include "../include/global_var.h"
 #include "../include/distdb.h"
+#include "../include/db_def.h"
+#include "../include/communication.h"
 
 void distdb_initalize()
 {
@@ -99,7 +101,83 @@ int distdb_enable_server(struct distdb_info *pdistdb_info, int retain)
 
 int distdb_execute_sql_str(DISTDB_NODE * nodes,struct DISTDB_SQL_RESULT ** out,const char *sql,int executeflag)
 {
-	//return distdb_execute_sql_bin(nodes,out,sql,strlen(sql) +1 ,executeflag);
+	return distdb_execute_sql_bin(nodes,out,sql,strlen(sql) +1 ,executeflag);
 }
+
+int distdb_execute_sql_bin(DISTDB_NODE * nodes,struct DISTDB_SQL_RESULT ** out,const char *sql,size_t length,int executeflag)
+{
+
+	struct DISTDB_SQL_RESULT * res;
+
+	void * db_private_ptr;
+
+	int ret;
+
+	*out = 0;
+
+	res = (typeof(res)) malloc(sizeof(struct DISTDB_SQL_RESULT));
+	pthread_mutex_init(&res->lock,0);
+
+
+	if (node_type) //哈哈，client-only 模式是不可以进行本地操作的啦
+		executeflag |= DISTDB_RPC_EXECSQL_NOLOCAL;
+
+	//制作步骤: 首先，您需要在本地查找(如果允许的话，呵呵) :)
+	if (!(executeflag & DISTDB_RPC_EXECSQL_NOLOCAL))
+	{
+		//本地查找
+		db.db_open(res, executeflag & DISTDB_RPC_EXECSQL_ALLOWRECURSIVE);
+
+		ret = db.db_exec_sql(res, sql, length);
+
+		if (ret)
+		{
+			db.db_close(res);
+			free(res);
+			return ret;
+		} // 本地找都会出错，就不必麻烦远程电脑了
+	}
+
+	if (! ( executeflag & DISTDB_RPC_EXECSQL_NOSERVER))
+	{
+		// 还要到远程电脑上整啊.. 真是的.
+		//TODO 远程查找
+		// 简单的发送一下命令就好了吧，接着记录，以便收到的时候进行合理的插入。
+		struct db_exchange_header * db_hdr = malloc(db_exchange_header_size
+				+ length + 2);
+
+		memset(db_hdr, 0, db_exchange_header_size + length + 2);
+
+		db_hdr->restptr = res;
+		db_hdr->length = length;
+		db_hdr->type = db_exchange_type_exec_sql;
+
+		//远程的电脑不需要再次查找远程的远程电脑吧，嘿嘿
+		db_hdr->exec_sql.execflag = executeflag | DISTDB_RPC_EXECSQL_NOSERVER;
+		memcpy(db_hdr->exec_sql.sql_command,sql,length);
+
+		pthread_mutex_lock(&res->lock);
+
+//		send_all(db_hdr,db_exchange_header_size + length + 1,0);
+
+		free(db_hdr);
+		pthread_mutex_unlock(&res->lock);
+	}
+
+	if (executeflag & DISTDB_RPC_EXECSQL_NORESULT)
+	{
+		if(res)
+			distdb_rpc_free_result(res);
+		*out = NULL;
+	}
+	else
+	{
+		//LIST_ADDTOTAIL(&results, &res->resultlist);
+		*out = res;
+	}
+	return ret;
+
+}
+
 
 

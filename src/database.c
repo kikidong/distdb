@@ -33,9 +33,6 @@
 #include "../include/rpc.h"
 #include "../include/communication.h"
 
-static LIST_SLOT_DEFINE(results);
-static FILE * cf;
-
 extern void * getbase()
 {
 	static struct {
@@ -136,7 +133,7 @@ int distdb_rpc_execute_sql_bin(struct DISTDB_SQL_RESULT ** out,const char *sql,s
 	}
 	else
 	{
-		LIST_ADDTOTAIL(&results, &res->resultlist);
+		//LIST_ADDTOTAIL(&results, &res->resultlist);
 		*out = res;
 	}
 	return ret;
