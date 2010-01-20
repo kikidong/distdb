@@ -45,65 +45,32 @@ extern void * getbase()
 	return &ret;
 }
 
-int	load_plugins(const char * configfile)
-{
-//	dbplugin = dlopen("sqlite.so",RTLD_NOW);
-
-	cf = fopen(configfile,"r");
-	if(!cf)
-	{
-		return -1;
-	}
-
-	char backend[128] = "sqlite";
-	void * dbplugin;
-	char * so_file;
-
-	get_profile_string(cf,"global","backend",backend,sizeof(backend));
-
-	so_file = strdup(PLUINGDIR);
-
-	so_file = realloc(so_file,strlen(so_file)+ strlen(backend) + 20 );
-	strcat(so_file,backend);
-	strcat(so_file,".so");
-	dbplugin = dlopen(so_file, RTLD_NOW);
-	free(so_file);
-	if(!dbplugin)
-	{
-		fprintf(stderr,dlerror());
-		close(cf);
-		return -1;
-	}
-	close(cf);
-	return 0;
-}
-
-void close_node(struct nodes* n)
-{
-	close(n->sock_peer);
-	n->sock_peer = 0;
-	LIST_DELETE_AT(&n->connectedlist);
-	LIST_ADDTOTAIL(&node_unconnectedlist,&n->unconnectedlist);
-}
-
-int send_all(void* buff,size_t size,int flag)
-{
-	struct list_node * n;
-	int ret = 0;
-	struct nodes * node;
-
-	pthread_mutex_lock(&nodelist_lock);
-	for(n=node_connectedlist.head;n!=node_connectedlist.tail->next;n=n->next)
-	{
-		node = LIST_HEAD(n,nodes,connectedlist);
-		if(send(node->sock_peer,buff,size,flag)<0);
-		{
-			close_node(node);
-		}
-	}
-	pthread_mutex_unlock(&nodelist_lock);
-	return ret;
-}
+//void close_node(struct nodes* n)
+//{
+//	close(n->sock_peer);
+//	n->sock_peer = 0;
+//	LIST_DELETE_AT(&n->connectedlist);
+//	LIST_ADDTOTAIL(&node_unconnectedlist,&n->unconnectedlist);
+//}
+//
+//int send_all(void* buff,size_t size,int flag)
+//{
+//	struct list_node * n;
+//	int ret = 0;
+//	struct nodes * node;
+//
+//	pthread_mutex_lock(&nodelist_lock);
+//	for(n=node_connectedlist.head;n!=node_connectedlist.tail->next;n=n->next)
+//	{
+//		node = LIST_HEAD(n,nodes,connectedlist);
+//		if(send(node->sock_peer,buff,size,flag)<0);
+//		{
+//			close_node(node);
+//		}
+//	}
+//	pthread_mutex_unlock(&nodelist_lock);
+//	return ret;
+//}
 
 
 
@@ -156,7 +123,7 @@ int distdb_rpc_execute_sql_bin(struct DISTDB_SQL_RESULT ** out,const char *sql,s
 		db_hdr->exec_sql.execflag = executeflag | DISTDB_RPC_EXECSQL_NOSERVER;
 		memcpy(db_hdr->exec_sql.sql_command,sql,length);
 
-		send_all(db_hdr,db_exchange_header_size + length + 1,0);
+//		send_all(db_hdr,db_exchange_header_size + length + 1,0);
 
 		free(db_hdr);
 	}

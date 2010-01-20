@@ -30,8 +30,6 @@ struct db_ops{
 };
 
 LIST_SLOT_DECLARE(nodelist);
-LIST_SLOT_DECLARE(node_unconnectedlist);
-LIST_SLOT_DECLARE(node_connectedlist);
 extern pthread_mutex_t nodelist_lock;
 extern int				  groupid; //本组号
 

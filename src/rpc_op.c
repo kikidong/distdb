@@ -196,14 +196,3 @@ void * rpc_loop_thread(void*__paramter)
 	return 0;
 }
 
-int open_rpc_socket()
-{
-	int opt = 1;
-	struct sockaddr_in addr = {0};
-	addr.sin_family = AF_INET;
-	addr.sin_port = RPC_DEFAULT_PORT;
-	g_rpc_socket = socket(AF_INET,SOCK_STREAM,0);
-	setsockopt(g_rpc_socket,SOL_SOCKET,SO_REUSEADDR,&opt,sizeof(opt));
-	bind(g_rpc_socket,(struct sockaddr*)&addr,INET_ADDRSTRLEN);
-	return listen(g_rpc_socket,2);
-}

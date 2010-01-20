@@ -85,10 +85,7 @@ static void* connect_peer(struct nodes * node)
 	}
 	//link to connected list
 
-	node->refcount ++;
-	LIST_ADDTOTAIL(&node_connectedlist,& node->connectedlist);
-	LIST_DELETE_AT(&node->unconnectedlist);
-	node->refcount --;
+
 	pthread_mutex_unlock(&nodelist_lock);
 	return service_loop(node);
 }
@@ -106,15 +103,15 @@ int start_connect_nodes()
 
 		pthread_mutex_lock(&nodelist_lock);
 
-		for (n = node_unconnectedlist.head; n
-				!= node_unconnectedlist.tail->next; n = n->next)
-		{
-			pthread_t pt;
-			if (!LIST_HEAD(n,nodes,unconnectedlist)->sock_peer) // only connect unconnected.
-				pthread_create(&pt, 0, (void *(*)(void *)) connect_peer,
-						LIST_HEAD(n,nodes,unconnectedlist));
-			//else n has been off link. Thank good ness, the n->next still works
-		}
+//		for (n = node_unconnectedlist.head; n
+//				!= node_unconnectedlist.tail->next; n = n->next)
+//		{
+//			pthread_t pt;
+//			if (!LIST_HEAD(n,nodes,unconnectedlist)->sock_peer) // only connect unconnected.
+//				pthread_create(&pt, 0, (void *(*)(void *)) connect_peer,
+//						LIST_HEAD(n,nodes,unconnectedlist));
+//			//else n has been off link. Thank good ness, the n->next still works
+//		}
 		pthread_mutex_unlock(&nodelist_lock);
 	} while (1);
 	return 0;
@@ -125,7 +122,7 @@ int open_nodes_socket()
 	int opt = 1;
 	struct sockaddr_in addr = {0};
 	addr.sin_family = AF_INET;
-	addr.sin_port = RPC_DEFAULT_PORT;
+	addr.sin_port = DISTDB_DEFAULT_PORT;
 	g_socket = socket(AF_INET, SOCK_DGRAM, 0);
 	setsockopt(g_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 	if (bind(g_socket, (struct sockaddr*) &addr, INET_ADDRSTRLEN) < 0)
@@ -143,15 +140,14 @@ int peer_lookup_same(in_addr_t ip)
 
 	pthread_mutex_lock(&nodelist_lock);
 
-	for (n = node_connectedlist.head; n
-			!= node_connectedlist.tail->next; n = n->next)
+	for (n = nodelist.head; n
+			!= nodelist.tail->next; n = n->next)
 	{
-		if(LIST_HEAD(n,nodes,connectedlist)->peer.sin_addr.s_addr == ip)
+		if(LIST_HEAD(n,nodes,nodelist)->peer.sin_addr.s_addr == ip)
 		{
 			pthread_mutex_unlock(&nodelist_lock);
 			return 1;
 		}
-
 	}
 	pthread_mutex_unlock(&nodelist_lock);
 	return 0;

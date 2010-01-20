@@ -99,9 +99,7 @@ static int nodesscanf( const char* line , void * ptr)
 		free(new_node);
 		return -1;
 	}
-	new_node->refcount = 2; // referenced by 2 lists
 	LIST_ADDTOHEAD(&nodelist,&new_node->nodelist);
-	LIST_ADDTOTAIL(&node_unconnectedlist,&new_node->unconnectedlist);
 	return 0;
 }
 
