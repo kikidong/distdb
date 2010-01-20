@@ -1,7 +1,7 @@
 
 AM_CFLAGS = -fPIC 
 
-EXTRA_DIST = version.c client.c java.c
+EXTRA_DIST = version.c client.c
 
 libexecdir=$(libdir)
 
