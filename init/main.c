@@ -164,14 +164,15 @@ int main(int argc,char*argv[],char*env[])
 
 	load_plugins(config_file);
 
-	//listen on local address and connect to nodes
-	connect_nodes();
+	//listen on local address
+	open_nodes_socket();
 
 	//listen on local RPC port
 	open_rpc_socket();
 
-	//the big event loop (main program defined in ../src)
-	event_loop();
+	//start to connect to nodes at idle time
+	start_connect_nodes();
 
-	return 0;
+	//the big event loop (main program defined in ../src)
+	return event_loop();
 }

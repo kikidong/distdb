@@ -20,15 +20,29 @@ struct db_exchange_header{
 	char					restptr_pad[8];
 	};
 	uint32_t					length:24;
-	uint32_t					pad:8;
-	uint32_t					execflag;
-	char						sql_command[0];
+	uint32_t					type:8; // @see db_exchange_type
+	union
+	{
+		struct
+		{
+			uint32_t execflag;
+			char sql_command[0];
+		}exec_sql;
+		struct {
+			int pad;
+		}ack_sql;
+	};
 };
 
+#define db_exchange_header_size 16
 
 #pragma pack(pop)
 
+enum db_exchange_type
+{
+	db_exchange_type_exec_sql = 1,
 
+};
 
 
 #endif /* COMMUNICATION_H_ */

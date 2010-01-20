@@ -23,8 +23,6 @@
 #include "../include/rpc.h"
 #include "../include/communication.h"
 
-static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER ;
-
 static int accepts(struct nodes ** pn)
 {
 	//只许可接受定义的节点的连接，希望将来可以改变这一事实。
@@ -39,7 +37,7 @@ static int accepts(struct nodes ** pn)
 		return 0; //忽略错误就可以了
 
 	//lock
-	pthread_mutex_lock(&lock);
+	pthread_mutex_lock(&nodelist_lock);
 	//look up the same peer node
 	for (n = node_connectedlist.head; n != node_connectedlist.tail->next; n
 			= n->next)
@@ -50,7 +48,7 @@ static int accepts(struct nodes ** pn)
 			close(LIST_HEAD(n,nodes,connectedlist)->sock_peer);
 			LIST_HEAD(n,nodes,connectedlist)->sock_peer = sock;
 			*pn = LIST_HEAD(n,nodes,connectedlist);
-			pthread_mutex_unlock(&lock);
+			pthread_mutex_unlock(&nodelist_lock);
 			return 0;
 		}
 	}
@@ -68,12 +66,12 @@ static int accepts(struct nodes ** pn)
 			LIST_HEAD(n,nodes,unconnectedlist)->peer = addr;
 			LIST_HEAD(n,nodes,unconnectedlist)->sock_peer = sock;
 
-			pthread_mutex_unlock(&lock);
+			pthread_mutex_unlock(&nodelist_lock);
 			return 0;
 		}
 	}
 
-	pthread_mutex_unlock(&lock);
+	pthread_mutex_unlock(&nodelist_lock);
 	//if not found in both place
 	write(sock, "Permission denied\n", 18, MSG_DONTWAIT);
 	close(sock);
@@ -86,13 +84,19 @@ static int accepts(struct nodes ** pn)
 void* service_loop(struct nodes * clientnode)
 {
 	int sock;
+
+	struct db_exchange_header db_hdr;
+
+	char 	* buffer;
+
 	sock = clientnode->sock_peer ;
 
-
-
-
-
-	while(1){}
+	while (recv(sock, &db_hdr, db_exchange_header_size, MSG_PEEK))
+	{
+		buffer = malloc(db_hdr.length);
+		recv(sock,buffer,db_hdr.length,0);
+		free(buffer);
+	}
 	return 0;
 }
 
@@ -100,12 +104,15 @@ void* service_loop(struct nodes * clientnode)
 /**
  * 这个函数完成对到来的连接进行的。
  */
-static void* master_service(void*not_used)
+static void* master_service(void*lock)
 {
 	struct nodes	*   clientnode;
 
 	if (accepts(&clientnode))
+	{
+		pthread_cond_signal((pthread_cond_t*)lock);
 		return 0;
+	}
 	// ok ,开始进行服务吧
 	return service_loop(clientnode);
 }
@@ -126,7 +133,14 @@ int event_loop()
 			{
 				//! 新开一个线程来处理
 				pthread_t	thread;
-				pthread_create(&thread,0,master_service,0);
+				pthread_cond_t	cond = PTHREAD_COND_INITIALIZER;
+				pthread_mutex_t		lock = PTHREAD_MUTEX_INITIALIZER;
+				pthread_mutex_lock(&lock);
+				pthread_create(&thread,0,master_service,&cond);
+				pthread_cond_wait(&cond,&lock);
+				pthread_mutex_unlock(&lock);
+				pthread_mutex_destroy(&lock);
+				pthread_cond_destroy(&cond);
 			}else if (pfd[ret].fd == g_rpc_socket)
 			{ //! 新开一个线程来处理新RPC客户的连接
 				pthread_t	thread;

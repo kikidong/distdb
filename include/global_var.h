@@ -32,6 +32,7 @@ struct db_ops{
 LIST_SLOT_DECLARE(nodelist);
 LIST_SLOT_DECLARE(node_unconnectedlist);
 LIST_SLOT_DECLARE(node_connectedlist);
+extern pthread_mutex_t nodelist_lock;
 
 extern	void*			  zeropage;
 extern int				  g_rpc_socket;

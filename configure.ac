@@ -115,6 +115,14 @@ AC_CHECK_DECL([INET_ADDRSTRLEN],[],
 	[AC_DEFINE([INET_ADDRSTRLEN],[16],[sizeof(sockaddr_in)])],
 	[[#include <netinet/in.h>
 	]])
+	
+AC_CHECK_DECL([PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP],
+	[AC_DEFINE(_GNU_SOURCE,1,[USE GNU EXTENTION])],
+	[],
+	[[
+	 #define _GNU_SOURCE
+	 #include <pthread.h>
+	]])
 
 # Checks for library functions.
 AC_CHECK_FUNC([popen],[],[AC_MSG_ERROR([popen not defined!])])
