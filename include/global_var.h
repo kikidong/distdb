@@ -33,6 +33,7 @@ LIST_SLOT_DECLARE(nodelist);
 LIST_SLOT_DECLARE(node_unconnectedlist);
 LIST_SLOT_DECLARE(node_connectedlist);
 extern pthread_mutex_t nodelist_lock;
+extern int				  groupid; //本组号
 
 extern	void*			  zeropage;
 extern int				  g_rpc_socket;
@@ -40,6 +41,9 @@ extern	int				  g_socket;
 extern int				  groupcount;
 extern struct _groupmap *groupmap;
 extern struct db_ops	  db;
+
+extern int node_type;
+extern struct distdb_info	node_info;
 
 __END_DECLS
 #endif /* GLOBAL_VAR_H_ */

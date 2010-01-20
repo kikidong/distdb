@@ -39,9 +39,9 @@ static FILE * cf;
 extern void * getbase()
 {
 	static struct {
-		struct db_ops *pdb;
-		FILE ** file;
-	}ret={&db,&cf};
+		struct db_ops *dbops;
+		struct distdb_info * info ;
+	}ret={&db,&node_info};
 	return &ret;
 }
 

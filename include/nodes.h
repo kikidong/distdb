@@ -42,6 +42,7 @@ struct nodes{
  	struct sockaddr_in	peer;			// end point
  	int			groupid;		// groupid
  	DEFINE_LIST(grouplist); // linked list that binds same group together.
+ 	int			type; // 1 for client only
 };
 
 static inline struct nodes * nodes_new()

@@ -95,6 +95,9 @@ __BEGIN_DECLS
 
 struct DISTDB_SQL_RESULT;
 
+
+struct _DISTDB_NODE;
+
 /**
  * @brief 用来标识一个SQL查询操作结果
  *
@@ -103,6 +106,46 @@ struct DISTDB_SQL_RESULT;
  * 不要尝试解析其内部意义
  */
 typedef struct DISTDB_SQL_RESULT DISTDB_SQL_RESULT;
+
+/**
+ * @brief 用来标识一个distdb节点。
+ *
+ * 由 distdb_connectto() 创建并返回。由 distdb_disconnect() 释放。不要尝
+ * 试解析其内部意义，内部意义将在无通知的情况下任意变动。
+ */
+
+typedef struct _DISTDB_NODE *DISTDB_NODE;
+
+
+/**
+ * @brief 转化到 server 模式的时候需要传入的参数。
+ *
+ * 包含了进行角色转化的所有信息
+ */
+struct distdb_info{
+	const char		servername[32]; /**<可选设，服务器名字，不能包含空格*/
+	int				backend;		  /**<数据库后端类型 0 sqlite 1 mysql 2 oracle */
+	int 			groupid;		/**<该节点组号*/
+
+	union{
+		struct {
+			const char	* dbname;	/**<指向数据库文件的文件名*/
+		}sqlite3_backend_info;
+		struct {
+			const char  * dbhost;  /**<mysql数据库名称*/
+			const char  * dbuser;  /**<连接到mysql数据库所使用的用户名*/
+			const char  * dbpass;  /**<数据库密码*/
+		}mysql_backend_info;
+		struct {
+			const char	* dbhost;  /**<oracle数据库*/
+			const char  * dbuser;  /**<oracle数据库用户*/
+			const char  * dbpass;  /**<oracle数据库密码*/
+		}occi_backend_info;
+	}backend_info;
+	const char *	node_file; /**<节点数据库文件名。
+							 如果提供了的话，distdb 将只接受节点数据库里面列出来的节点*/
+};
+
 
 
 /**
@@ -119,6 +162,47 @@ typedef struct DISTDB_SQL_RESULT DISTDB_SQL_RESULT;
 const char* distdb_version();
 
 /**
+ * @brief 初始化distdb节点
+ * @return void
+ *
+ * 在使用任何 distdb_* (distdb_version除外) 函数前调用他进行显示初始化。
+ */
+void distdb_initalize();
+
+
+/**
+ * @brief 设置节点角色
+ * @param[in] __pdistdb_info 指向 distdb_info 结构的指针
+ * @param[in] retain 见详解
+ * @return 成功变成 server 角色就成 0，失败成 -1
+ *
+ * distdb 节点默认角色是 client-only
+ *
+ * client-only角色是那样的一种角色，它没有本地数据端，只能请求其他节点服务，
+ * 也不能接受其他节点的服务请求，只能发出请求，而无法做到进行服务。
+ *
+ * server 角色是那样的一种角色，它连接到本地数据端，能接受其他服务器的请求
+ * 并应答，同时，其自身也能要求其他节点进行服务。
+ *
+ * 当调用此函数，distdb 将转入server模式。
+ *
+ * 当调用 distdb_enable_server 的时候，默认会断开所有目前已经连接到的节点。要想连接更多节点，请调用
+ * distdb_connect 手工连接。如果 retain 不为 0 ， 则会重新连接  distdb_enable_server 调用时
+ * 还在线的节点，使用新身份登录。
+ *
+ * distdb直接运行 libdistdb.so(Linux平台由脚本 distdbd 执行，Windows平台为 distdb.exe )
+ * 的时候，其入口点将调用  distdb_enable_server 进入 server 模式。并间歇搜索新的节点，连接上去
+ *
+ * distdb 作为 共享库 libdistdb.so (Windows 下是 distdb.dll ， 和 distdb.exe 只是最后连接的时候参数不同 ) 运行的时候，如果调用者没有
+ * 调用 distdb_enable_server ， distdb 就进入了 client-only 模式。
+ *
+ * @see distdb_info
+ *
+ */
+int distdb_enable_server(struct distdb_info *__pdistdb_info,int retain);
+
+
+/**
  * @brief 连接到指定的RPC服务器
  * @param[in] server 服务器的字符串
  * @retval 0 成功连接到远程服务器
@@ -129,6 +213,18 @@ const char* distdb_version();
  * @see distdb_lasterror
  */
 int distdb_rpc_connectto(const char * server);
+
+
+/**
+ * @brief 连接到指定的节点
+ * @param[in] server 服务器的字符串
+ * @return DISTDB_NODE *
+ *
+ * distdb_connect 连接到一个节点，并加入可用节点链表。这些节点将在您进行查询操作是被自动
+ * 操作，除非显示指定了操作的节点，否者所有已经连接的节点都会被自动操作。
+ *
+ */
+DISTDB_NODE distdb_connect(const char* server);
 
 /**
  * @brief 断开RPC连接

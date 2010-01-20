@@ -15,6 +15,7 @@
  * If you have any question with law suite, please contract 黄小克, the owner of
  * this company.
  */
+
 static char zeropage[4096];
 
 #ifdef HAVE_CONFIG_H

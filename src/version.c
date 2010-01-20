@@ -19,9 +19,10 @@
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
+#else
+#include "../include/vcconfig.h"
 #endif
 
-#include "vcconfig.h"
 #include <stdlib.h>
 
 #define __DISTDB_SERVER_SIDE_H
@@ -32,7 +33,7 @@ const char* distdb_version()
 {
 	return PACKAGE_VERSION;
 }
-extern long seq;
+long seq;
 
 void __init()
 {

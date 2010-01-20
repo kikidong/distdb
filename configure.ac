@@ -163,7 +163,6 @@ AC_CONFIG_FILES([
 				 nodes.db				 
                  include/Makefile
                  src/Makefile
-                 lib/Makefile
                  init/Makefile
                  db/Makefile
                  doc/Makefile
