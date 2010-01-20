@@ -30,6 +30,7 @@
 #include "../include/distdb.h"
 #include "../include/inifile.h"
 #include "../include/db_def.h"
+#include "../include/communication.h"
 
 static LIST_SLOT_DEFINE(results);
 static FILE * cf;
@@ -76,6 +77,35 @@ int	load_plugins(const char * configfile)
 	return 0;
 }
 
+void close_node(struct nodes* n)
+{
+	close(n->sock_peer);
+	n->sock_peer = 0;
+	LIST_DELETE_AT(&n->connectedlist);
+	LIST_ADDTOTAIL(&node_unconnectedlist,&n->unconnectedlist);
+}
+
+int send_all(void* buff,size_t size,int flag)
+{
+	struct list_node * n;
+	int ret = 0;
+	struct nodes * node;
+
+	pthread_mutex_lock(&nodelist_lock);
+	for(n=node_connectedlist.head;n!=node_connectedlist.tail->next;n=n->next)
+	{
+		node = LIST_HEAD(n,nodes,connectedlist);
+		if(send(node->sock_peer,buff,size,flag)<0);
+		{
+			close_node(node);
+		}
+	}
+	pthread_mutex_unlock(&nodelist_lock);
+	return ret;
+}
+
+
+
 /*
  * Server side :)
  */
@@ -111,11 +141,24 @@ int distdb_rpc_execute_sql_bin(struct DISTDB_SQL_RESULT ** out,const char *sql,s
 	{
 		// 还要到远程电脑上整啊.. 真是的.
 		//TODO 远程查找
+		// 简单的发送一下命令就好了吧
+		struct db_exchange_header * db_hdr = malloc(db_exchange_header_size
+				+ length + 2);
 
+		memset(db_hdr, 0, db_exchange_header_size + length + 2);
 
+		db_hdr->restptr = res;
+		db_hdr->length = length;
+		db_hdr->type = 0;
 
+		//远程的电脑不需要再次查找远程的远程电脑吧，嘿嘿
+		db_hdr->exec_sql.execflag = executeflag | DISTDB_RPC_EXECSQL_NOSERVER;
+		memcpy(db_hdr->exec_sql.sql_command,sql,length);
+
+		send_all(db_hdr,db_exchange_header_size + length + 1,0);
+
+		free(db_hdr);
 	}
-
 
 	if (executeflag & DISTDB_RPC_EXECSQL_NORESULT)
 	{

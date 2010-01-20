@@ -161,10 +161,6 @@ int distdb_rpc_free_result(struct DISTDB_SQL_RESULT *reslt)
 /**
  * @brief distdb_rpc_fetch_result 获得结果.
  *
- * @reslt
- *
- * @result 返回
- *
  * @return 成功返回 0 ，失败 -1
  */
 int distdb_rpc_fetch_result(struct DISTDB_SQL_RESULT * reslt,char ** result[])
@@ -201,7 +197,11 @@ int distdb_rpc_fetch_result(struct DISTDB_SQL_RESULT * reslt,char ** result[])
 	*result = reslt->result;
 	return rbuff->ret;	 //:D
 }
-
+/**
+ * @brief 单独运行时的入口点
+ *
+ * 当直接运行 libdistdb 的时候，libdistdb 会直接打出这样的声明，而不是抱怨无法运行
+ */
 int main(int argc, char* argv[])
 {
 	printf("libdistdb -- The rpc call wrapper for distdb\n");

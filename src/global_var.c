@@ -21,6 +21,9 @@
 #include "config.h"
 #endif
 
+#include <sys/types.h>
+#include <pthread.h>
+
 #define __DISTDB_SERVER_SIDE_H
 
 #include "../include/global_var.h"
@@ -34,6 +37,7 @@ int	g_rpc_socket,g_socket;
 LIST_SLOT_DEFINE(nodelist);
 LIST_SLOT_DEFINE(node_unconnectedlist);
 LIST_SLOT_DEFINE(node_connectedlist);
+pthread_mutex_t nodelist_lock=PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
 
 int				  groupcount;
 struct _groupmap *groupmap;
