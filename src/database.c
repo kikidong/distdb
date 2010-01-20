@@ -30,6 +30,7 @@
 #include "../include/distdb.h"
 #include "../include/inifile.h"
 #include "../include/db_def.h"
+#include "../include/rpc.h"
 #include "../include/communication.h"
 
 static LIST_SLOT_DEFINE(results);
@@ -149,7 +150,7 @@ int distdb_rpc_execute_sql_bin(struct DISTDB_SQL_RESULT ** out,const char *sql,s
 
 		db_hdr->restptr = res;
 		db_hdr->length = length;
-		db_hdr->type = 0;
+		db_hdr->type = db_exchange_type_exec_sql;
 
 		//远程的电脑不需要再次查找远程的远程电脑吧，嘿嘿
 		db_hdr->exec_sql.execflag = executeflag | DISTDB_RPC_EXECSQL_NOSERVER;
@@ -178,6 +179,39 @@ int distdb_rpc_fetch_result(struct DISTDB_SQL_RESULT * in,char ** result[])
 {
 	return db.db_fetch_row(in,result);
 }
+
+int distdb_fetch_result(struct DISTDB_SQL_RESULT * reslt,char * data, size_t * retsize)
+{
+	int i,retval;
+
+	struct db_sql_result * srst = (typeof(srst))data;
+
+	srst->number = reslt->columns;
+
+	char ** res;
+
+	retval = distdb_rpc_fetch_result(reslt,&res);
+
+	if (retval==-1)
+	{
+		*retsize = 0;
+		return -1;
+	}
+
+	char * real_result = (char*)(srst->offsets + reslt->columns);
+
+	*retsize = reslt->columns +1 ;
+
+	for( i = 0; i < srst->number ; ++i )
+	{
+		strcpy(real_result,res[i]);
+		srst->offsets[i] = real_result - data;
+		real_result += strlen(res[i])+1;
+		*retsize += strlen(res[i])+1;
+	}
+	return retval;
+}
+
 
 int distdb_rpc_free_result(struct DISTDB_SQL_RESULT * p)
 {

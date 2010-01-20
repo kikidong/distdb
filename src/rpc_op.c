@@ -81,31 +81,8 @@ static int rpc_fetch_result(struct rpc_clients*client, char * data, size_t * ret
 	int i,retval;
 	DISTDB_SQL_RESULT * reslt ;
 	memcpy(&reslt,data,sizeof(reslt));
-	struct rpc_sql_result * srst = (typeof(srst))data;
-	srst->number = reslt->columns;
 
-	char ** res;
-
-	retval = distdb_rpc_fetch_result(reslt,&res);
-
-	if (retval==-1)
-	{
-		*retsize = 0;
-		return -1;
-	}
-
-	char * real_result = (char*)(srst->offsets + reslt->columns);
-
-	*retsize = reslt->columns +1 ;
-
-	for( i = 0; i < srst->number ; ++i )
-	{
-		strcpy(real_result,res[i]);
-		srst->offsets[i] = real_result - data;
-		real_result += strlen(res[i])+1;
-		*retsize += strlen(res[i])+1;
-	}
-	return retval;
+	return distdb_fetch_result(reslt,data,retsize);
 }
 
 static int rpc_stub(struct rpc_clients*client, char * data, size_t * ret){	*ret = 0;return -1;}

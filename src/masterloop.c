@@ -92,14 +92,44 @@ void* service_loop(struct nodes * clientnode)
 
 	struct db_exchange_header db_hdr;
 
-	char 	* buffer;
+	struct DISTDB_SQL_RESULT * res;
+
+	struct db_exchange_header* 	buffer;
+
+	char *		*				restable;
+
+	size_t						size;
 
 	sock = clientnode->sock_peer ;
 
 	while (recv(sock, &db_hdr, db_exchange_header_size, MSG_PEEK))
 	{
-		buffer = malloc(db_hdr.length);
-		recv(sock,buffer,db_hdr.length,0);
+		buffer = (typeof(buffer))malloc(db_hdr.length);
+		size = recv(sock,buffer,db_hdr.length,0);
+		switch (db_hdr.type)
+		{
+		//收到了查询请求，:)
+		case db_exchange_type_exec_sql:
+			//那就在本地进行操作吧，哈哈,完整的操作下来。
+
+			if (distdb_rpc_execute_sql_bin(&res, buffer->exec_sql.sql_command,
+					buffer->length - db_exchange_header_size,
+					buffer->exec_sql.execflag))
+				break; // 无聊，发送错误的东东
+			if (res)
+			{
+				while (!distdb_fetch_result(res, buffer->pad + 4, &size))
+				{
+					buffer->length = size + db_exchange_header_size;
+					buffer->type = db_exchange_type_return_result;
+					memset(buffer->pad,0,4);
+					if (send(sock, buffer, buffer->length, 0))
+						break;
+				}
+				distdb_rpc_free_result(res);
+			}
+			break;
+		}
 		free(buffer);
 	}
 	return 0;
