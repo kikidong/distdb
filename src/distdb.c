@@ -141,7 +141,6 @@ int distdb_execute_sql_bin(DISTDB_NODE * nodes,struct DISTDB_SQL_RESULT ** out,c
 	if (! ( executeflag & DISTDB_RPC_EXECSQL_NOSERVER))
 	{
 		// 还要到远程电脑上整啊.. 真是的.
-		//TODO 远程查找
 		// 简单的发送一下命令就好了吧，接着记录，以便收到的时候进行合理的插入。
 		struct db_exchange_header * db_hdr = malloc(db_exchange_header_size
 				+ length + 2);
@@ -157,9 +156,7 @@ int distdb_execute_sql_bin(DISTDB_NODE * nodes,struct DISTDB_SQL_RESULT ** out,c
 		memcpy(db_hdr->exec_sql.sql_command,sql,length);
 
 		pthread_mutex_lock(&res->lock);
-
-//		send_all(db_hdr,db_exchange_header_size + length + 1,0);
-
+		send_all(nodes,db_hdr,db_exchange_header_size + length + 1,0);
 		free(db_hdr);
 		pthread_mutex_unlock(&res->lock);
 	}

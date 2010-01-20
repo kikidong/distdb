@@ -49,8 +49,7 @@ static int rpc_call_exec_sql(struct rpc_clients* client,char * data, size_t * re
 	struct execute_sql_bin * pdata = (typeof(pdata)) data;
 	struct DISTDB_SQL_RESULT * rest = 0;
 
-	ret = distdb_rpc_execute_sql_bin(&rest,
-			pdata->data,pdata->length,pdata->flag);
+	//ret = distdb_rpc_execute_sql_bin(&rest,			pdata->data,pdata->length,pdata->flag);
 
 	memcpy(data,&(rest),8);
 

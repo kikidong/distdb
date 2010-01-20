@@ -50,93 +50,31 @@ extern void * getbase()
 //	LIST_ADDTOTAIL(&node_unconnectedlist,&n->unconnectedlist);
 //}
 //
-//int send_all(void* buff,size_t size,int flag)
-//{
-//	struct list_node * n;
-//	int ret = 0;
-//	struct nodes * node;
-//
-//	pthread_mutex_lock(&nodelist_lock);
-//	for(n=node_connectedlist.head;n!=node_connectedlist.tail->next;n=n->next)
-//	{
-//		node = LIST_HEAD(n,nodes,connectedlist);
-//		if(send(node->sock_peer,buff,size,flag)<0);
-//		{
-//			close_node(node);
-//		}
-//	}
-//	pthread_mutex_unlock(&nodelist_lock);
-//	return ret;
-//}
-
-
-
-/*
- * Server side :)
- */
-int distdb_rpc_execute_sql_bin(struct DISTDB_SQL_RESULT ** out,const char *sql,size_t length,int executeflag)
+void send_all(DISTDB_NODE * nodes, void* buff, size_t size, int flag)
 {
+	struct nodes * node;
 
-	struct DISTDB_SQL_RESULT * res;
-
-	void * db_private_ptr;
-
-	int ret;
-
-	*out = 0;
-
-	res = (typeof(res)) malloc(sizeof(struct DISTDB_SQL_RESULT));
-
-	if (!(executeflag & DISTDB_RPC_EXECSQL_NOLOCAL))
+	if (nodes)
 	{
-		//本地查找
-		db.db_open(res, executeflag & DISTDB_RPC_EXECSQL_ALLOWRECURSIVE);
-
-		ret = db.db_exec_sql(res, sql, length);
-
-		if (ret)
+		node = (struct nodes *)(nodes[0]);
+		while (node)
 		{
-			db.db_close(res);
-			free(res);
-			return ret;
-		} // 本地找都会出错，就不必麻烦远程电脑了
-	}
-
-	if (! ( executeflag & DISTDB_RPC_EXECSQL_NOSERVER))
-	{
-		// 还要到远程电脑上整啊.. 真是的.
-		//TODO 远程查找
-		// 简单的发送一下命令就好了吧
-		struct db_exchange_header * db_hdr = malloc(db_exchange_header_size
-				+ length + 2);
-
-		memset(db_hdr, 0, db_exchange_header_size + length + 2);
-
-		db_hdr->restptr = res;
-		db_hdr->length = length;
-		db_hdr->type = db_exchange_type_exec_sql;
-
-		//远程的电脑不需要再次查找远程的远程电脑吧，嘿嘿
-		db_hdr->exec_sql.execflag = executeflag | DISTDB_RPC_EXECSQL_NOSERVER;
-		memcpy(db_hdr->exec_sql.sql_command,sql,length);
-
-//		send_all(db_hdr,db_exchange_header_size + length + 1,0);
-
-		free(db_hdr);
-	}
-
-	if (executeflag & DISTDB_RPC_EXECSQL_NORESULT)
-	{
-		if(res)
-			distdb_rpc_free_result(res);
-		*out = NULL;
+			send(node->sock_peer, buff, size, flag);
+			node++;
+		}
 	}
 	else
 	{
-		//LIST_ADDTOTAIL(&results, &res->resultlist);
-		*out = res;
+		struct list_node * n;
+		pthread_mutex_lock(&nodelist_lock);
+
+		for (n = nodelist.head; n != nodelist.tail->next; n = n->next)
+		{
+			node = LIST_HEAD(n,nodes,nodelist);
+			send(node->sock_peer, buff, size, flag);
+		}
+		pthread_mutex_unlock(&nodelist_lock);
 	}
-	return ret;
 }
 
 int distdb_rpc_fetch_result(struct DISTDB_SQL_RESULT * in,char ** result[])

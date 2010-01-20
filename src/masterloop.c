@@ -19,9 +19,9 @@
 
 /**
  * Master loop --
- * 1) listen on local rpc port and accept rpc connections
- * 2) listen on local service port and accept other nodes' connection
+ * listen on local service port and accept other nodes' connection
  */
+
 #include <sys/poll.h>
 #include <pthread.h>
 #include "../include/global_var.h"
@@ -51,6 +51,15 @@ static int accepts(struct nodes ** pn)
 
 void * massive_loop( struct nodes * client)
 {
+	//从这里接受连接到的节点的请求
+
+
+
+
+
+
+
+
 
 
 

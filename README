@@ -14,5 +14,14 @@ distdb_enable_server 进行角色转换，进入 server 模式。并停留在一
 
 
 在共享库模式下， distdb 在调用进程上下文运行。默认使用 client-only 模式。只需要连接到一个其他的节点就可以
-了，此时应该将默认启用 DISTDB_EXECSQL_NOLOCAL 选项
+了，此时应该将默认启用 DISTDB_EXECSQL_NOLOCAL 选项。
+
+这样就可以避免使用昂贵的 RPC 接口了。
+
+distdb 为每一个连接到的节点使用一个线程。
+
+
+
+
+
 
