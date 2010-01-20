@@ -201,23 +201,11 @@ void distdb_initalize();
  */
 int distdb_enable_server(struct distdb_info *__pdistdb_info,int retain);
 
-
-/**
- * @brief 连接到指定的RPC服务器
- * @param[in] server 服务器的字符串
- * @retval 0 成功连接到远程服务器
- * @retval 1 无法连接，要查询具体错误，请调用 distdb_lasterror()
- *
- * 如果 server 指针为　NULL 表示连接本地服务。server 字符串可以使用
- * 	SERVERNAME:[PORT] 的形式指定端口。SERVERNAME 可以是　IP 地址，也可以是计算机名。
- * @see distdb_lasterror
- */
-int distdb_rpc_connectto(const char * server);
-
-
 /**
  * @brief 连接到指定的节点
  * @param[in] server 服务器的字符串
+ *  		如果 server 指针为　NULL 表示连接本地服务。server 字符串可以使用
+ *   	SERVERNAME:[PORT] 的形式指定端口。SERVERNAME 可以是　IP 地址，也可以是计算机名。
  * @return DISTDB_NODE *
  *
  * distdb_connect 连接到一个节点，并加入可用节点链表。这些节点将在您进行查询操作是被自动
@@ -227,45 +215,47 @@ int distdb_rpc_connectto(const char * server);
 DISTDB_NODE distdb_connect(const char* server);
 
 /**
- * @brief 断开RPC连接
+ * @brief 断开某个节点的连接
+ * @param[in] node 服务器节点描述
  * @return 无
  *
- * 断开与 RPC 服务器的连接，一般在退出应用程序的时候使用。
+ * 断开与服务节点的连接
  */
-void distdb_rpc_disconnect();
+void distdb_disconnect(DISTDB_NODE node);
 
 /**
- * @brief 进行 distdb_rpc_execute_sql_* 调用时使用的旗标
+ * @brief 进行 distdb_execute_sql_* 调用时使用的旗标
  */
 enum executeflag{
 
 
-	DISTDB_RPC_EXECSQL_NOLOCAL	= 0x00000001,
+	DISTDB_EXECSQL_NOLOCAL	= 0x00000001,
 	/**< force distdb to send request to other computers*/
 
 
-	DISTDB_RPC_EXECSQL_NOSERVER = 0x00000002,
+	DISTDB_EXECSQL_NOSERVER = 0x00000002,
 	/**< force distdb to lookup locally*/
 
-	DISTDB_RPC_EXECSQL_NORESULT = 0x00000004 ,
+	DISTDB_EXECSQL_NORESULT = 0x00000004 ,
 	/**<force distdb to discard results*/
 
-	DISTDB_RPC_EXECSQL_ALLOWRECURSIVE = 0x00010000
+	DISTDB_EXECSQL_ALLOWRECURSIVE = 0x00010000
 	/**< 允许在前一个SQL查询句柄还没有释放的情况下再次进行SQL操作*/
 
 	/** @see DISTDB_RPC_EXECSQL_NOLOCAL */
-#define DISTDB_RPC_EXECSQL_NOLOCAL DISTDB_RPC_EXECSQL_NOLOCAL
+#define DISTDB_RPC_EXECSQL_NOLOCAL DISTDB_EXECSQL_NOLOCAL
 	/**< force distdb to send request to other computers*/
 
-#define DISTDB_RPC_EXECSQL_SERVERONLY DISTDB_RPC_EXECSQL_NOLOCAL
-#define DISTDB_RPC_EXECSQL_NOSERVER	DISTDB_RPC_EXECSQL_NOSERVER
-#define DISTDB_RPC_EXECSQL_LOCALONLY	DISTDB_RPC_EXECSQL_NOSERVER
-#define DISTDB_RPC_EXECSQL_NORESULT DISTDB_RPC_EXECSQL_NORESULT
-#define DISTDB_RPC_EXECSQL_ALLOWRECURSIVE DISTDB_RPC_EXECSQL_ALLOWRECURSIVE
+#define DISTDB_RPC_EXECSQL_SERVERONLY DISTDB_EXECSQL_NOLOCAL
+#define DISTDB_RPC_EXECSQL_NOSERVER	DISTDB_EXECSQL_NOSERVER
+#define DISTDB_RPC_EXECSQL_LOCALONLY	DISTDB_EXECSQL_NOSERVER
+#define DISTDB_RPC_EXECSQL_NORESULT DISTDB_EXECSQL_NORESULT
+#define DISTDB_RPC_EXECSQL_ALLOWRECURSIVE DISTDB_EXECSQL_ALLOWRECURSIVE
 };
 
 /**
  * @brief 执行SQL语句
+ * @param[in]
  * @param[out] out 查询结果句柄
  * @param[in] sql 查询语句 \n
  * 				必须是NULL结束的字符串 see distdb_rpc_execute_sql_bin
@@ -273,7 +263,7 @@ enum executeflag{
  *
  * 执行SQL语句,SQL语句
  */
-int distdb_rpc_execute_sql_str(struct DISTDB_SQL_RESULT ** out,const char * sql, int executeflag);
+int distdb_execute_sql_str(DISTDB_NODE * nodes,struct DISTDB_SQL_RESULT ** out,const char * sql, int executeflag);
 
 /**
  * @brief distdb_rpc_execute_sql_bin 执行SQL语句
@@ -283,7 +273,7 @@ int distdb_rpc_execute_sql_str(struct DISTDB_SQL_RESULT ** out,const char * sql,
  * @param[in] length 长度
  * @param[in] executeflag 查询模式，@see executeflag
  */
-int distdb_rpc_execute_sql_bin(struct DISTDB_SQL_RESULT ** out,const char *sql,size_t length,int executeflag);
+int distdb_execute_sql_bin(DISTDB_NODE * nodes,struct DISTDB_SQL_RESULT ** out,const char *sql,size_t length,int executeflag);
 
 // One call , one row, more row ? call more
 /**

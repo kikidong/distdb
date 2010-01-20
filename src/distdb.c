@@ -94,6 +94,12 @@ int distdb_enable_server(struct distdb_info *pdistdb_info, int retain)
 	if(open_nodes_socket())
 		return -1;
 	//建立监听服务
-	pthread_create(&pt,0,service_loop,0);
+	return pthread_create(&pt,0,service_loop,0);
 }
+
+int distdb_execute_sql_str(DISTDB_NODE * nodes,struct DISTDB_SQL_RESULT ** out,const char *sql,int executeflag)
+{
+	//return distdb_execute_sql_bin(nodes,out,sql,strlen(sql) +1 ,executeflag);
+}
+
 
