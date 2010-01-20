@@ -38,56 +38,50 @@
 #include "../include/db_def.h"
 
 
-
-void * connect_nodes(void *unused)
+DISTDB_NODE distdb_connect(const char* server)
 {
+	int sock_peer;
+	struct sockaddr_in peer;
+	struct nodes * newnode;
+	//连接并登录
+	memset(peer.sin_zero, 0, sizeof(peer.sin_zero));
 
-}
+	peer.sin_family = AF_INET;
+	peer.sin_port = DISTDB_DEFAULT_PORT;
+	peer.sin_addr.s_addr = resoveserver(server, &peer.sin_port);
+	peer.sin_port = htons(peer.sin_port);
 
-
-/*
- * connet to ip and return the fd
- */
-static int connectto(struct sockaddr_in * peer)
-{
-	int ret;
-	int sk = socket(peer->sin_family,SOCK_STREAM,0);
-
-	fcntl(sk,F_SETFL,fcntl(sk,F_GETFL)|O_NONBLOCK);
-
-	if(sk > 0)
-		ret =  connect(sk,(struct sockaddr*)peer,INET_ADDRSTRLEN);
-	else
-		return -1;
-	if(ret && errno != EINPROGRESS)
-		close(sk);
-	return ret;
-}
-
-/*
- * connect to peers
- */
-static void* connect_peer(struct nodes * node)
-{
-	pthread_t pt;
-	//connect
 	pthread_mutex_lock(&nodelist_lock);
-	if (node->sock_peer == 0)
+	if (peer_lookup_same(peer.sin_addr.s_addr)) //已经连接的就不再重复连接
 	{
-		//有可能执行到这里的时候已经连接上东东了呢！
-		node->sock_peer = connectto(&node->peer);
-	}
-	else
-	{
-		//已经被连接了，那就不用再费事连接到对方了
 		pthread_mutex_unlock(&nodelist_lock);
 		return 0;
 	}
-	//link to connected list
+	sock_peer = socket(AF_INET, SOCK_STREAM, 0);
 
+	if (sock_peer < 0)
+		return 0;
 
+	if (connect(sock_peer, (const struct sockaddr *) &peer, INET_ADDRSTRLEN)
+			< 0)
+	{
+		close(sock_peer);
+		pthread_mutex_unlock(&nodelist_lock);
+		return 0;
+	}
+
+	newnode = nodes_new();
+	newnode->peer = peer;
+	LIST_ADDTOTAIL(&nodelist, &newnode->nodelist);
 	pthread_mutex_unlock(&nodelist_lock);
-	return service_loop(node);
+
+	if (distdb_login(newnode))
+	{
+		//登录失败!从列表中移除
+		LIST_DELETE_AT(&newnode->nodelist);
+		newnode->freeer(newnode);
+	}
+	return (DISTDB_NODE) newnode;
 }
 
 int start_connect_nodes()

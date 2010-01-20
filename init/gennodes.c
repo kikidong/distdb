@@ -88,7 +88,7 @@ static int nodesscanf( const char* line , void * ptr)
 	switch(sscanf(line, "%d.%d.%d.%d:%d", &s1, &s2, &s3, &s4, &port))
 	{
 	case 4:
-		port = RPC_DEFAULT_PORT;
+		port = DISTDB_DEFAULT_PORT;
 	case 5:
 		new_node->peer.sin_family = AF_INET;
 		new_node->peer.sin_port = port;
