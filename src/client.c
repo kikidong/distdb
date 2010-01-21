@@ -15,6 +15,7 @@
  * If you have any question with law suite, please contract 黄小克, the owner of
  * this company.
  */
+
 static char zeropage[4096];
 
 #ifdef HAVE_CONFIG_H
@@ -97,7 +98,7 @@ static int do_exchange(struct rpc_packet_call * call , struct rpc_packet_ret * r
 	return 0;
 }
 
-int distdb_rpc_execute_sql_bin(struct DISTDB_SQL_RESULT ** out,const char *sql,size_t length,int executeflag)
+int distdb_execute_sql_bin(DISTDB_NODE * nodes,struct DISTDB_SQL_RESULT ** out,const char *sql,size_t length,int executeflag)
 {
 	socklen_t	addrlen = INET_ADDRSTRLEN;
 
@@ -130,10 +131,6 @@ int distdb_rpc_execute_sql_bin(struct DISTDB_SQL_RESULT ** out,const char *sql,s
 	return rbuff->ret;
 }
 
-int distdb_rpc_execute_sql_str(struct DISTDB_SQL_RESULT ** out,const char *sql,int executeflag)
-{
-	return distdb_rpc_execute_sql_bin(out,sql,strlen(sql) +1 ,executeflag);
-}
 
 int distdb_rpc_free_result(struct DISTDB_SQL_RESULT *reslt)
 {
@@ -196,16 +193,4 @@ int distdb_rpc_fetch_result(struct DISTDB_SQL_RESULT * reslt,char ** result[])
 	}
 	*result = reslt->result;
 	return rbuff->ret;	 //:D
-}
-/**
- * @brief 单独运行时的入口点
- *
- * 当直接运行 libdistdb 的时候，libdistdb 会直接打出这样的声明，而不是抱怨无法运行
- */
-int main(int argc, char* argv[])
-{
-	printf("libdistdb -- The rpc call wrapper for distdb\n");
-	printf("Copyright (C) 2009-2010 microcai %s\n",PACKAGE_BUGREPORT);
-	printf("version %s compiled on %s %s\n",VERSION, __DATE__,__TIME__);
-	exit(0);
 }

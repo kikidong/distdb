@@ -151,12 +151,10 @@ void __init()
 
 	struct {
 		struct db_ops *pdb;
-		FILE ** file;
+		struct distdb_info * info;
 	} * base = getbase();
 
 	struct db_ops * db = base->pdb;
-
-	FILE * cf = *base->file;
 
 	db->db_exec_sql = execsql;
 
@@ -170,10 +168,10 @@ void __init()
 
 	db->db_close = db_close;
 
-	dbfile = malloc(1024);
+	dbfile = strdup(base->info->backend_info.sqlite3_backend_info.dbname);
 
-	get_profile_string(cf,"sqlite","db",dbfile,1024);
 	sqlite3_open(dbfile,&pdb);
+
 	printf("sqlite backend loaded\n");
 	return;
 }

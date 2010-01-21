@@ -95,6 +95,9 @@ __BEGIN_DECLS
 
 struct DISTDB_SQL_RESULT;
 
+
+struct _DISTDB_NODE;
+
 /**
  * @brief 用来标识一个SQL查询操作结果
  *
@@ -103,6 +106,46 @@ struct DISTDB_SQL_RESULT;
  * 不要尝试解析其内部意义
  */
 typedef struct DISTDB_SQL_RESULT DISTDB_SQL_RESULT;
+
+/**
+ * @brief 用来标识一个distdb节点。
+ *
+ * 由 distdb_connectto() 创建并返回。由 distdb_disconnect() 释放。不要尝
+ * 试解析其内部意义，内部意义将在无通知的情况下任意变动。
+ */
+
+typedef struct _DISTDB_NODE *DISTDB_NODE;
+
+
+/**
+ * @brief 转化到 server 模式的时候需要传入的参数。
+ *
+ * 包含了进行角色转化的所有信息
+ */
+struct distdb_info{
+	const char		servername[32]; /**<可选设，服务器名字，不能包含空格*/
+	int				backend;		  /**<数据库后端类型 0 sqlite 1 mysql 2 oracle */
+	int 			groupid;		/**<该节点组号*/
+
+	union{
+		struct {
+			const char	* dbname;	/**<指向数据库文件的文件名*/
+		}sqlite3_backend_info;
+		struct {
+			const char  * dbhost;  /**<mysql数据库名称*/
+			const char  * dbuser;  /**<连接到mysql数据库所使用的用户名*/
+			const char  * dbpass;  /**<数据库密码*/
+		}mysql_backend_info;
+		struct {
+			const char	* dbhost;  /**<oracle数据库*/
+			const char  * dbuser;  /**<oracle数据库用户*/
+			const char  * dbpass;  /**<oracle数据库密码*/
+		}occi_backend_info;
+	}backend_info;
+	const char *	node_file; /**<节点数据库文件名。
+							 如果提供了的话，distdb 将只接受节点数据库里面列出来的节点*/
+};
+
 
 
 /**
@@ -119,57 +162,107 @@ typedef struct DISTDB_SQL_RESULT DISTDB_SQL_RESULT;
 const char* distdb_version();
 
 /**
- * @brief 连接到指定的RPC服务器
- * @param[in] server 服务器的字符串
- * @retval 0 成功连接到远程服务器
- * @retval 1 无法连接，要查询具体错误，请调用 distdb_lasterror()
+ * @brief 初始化distdb节点
+ * @return void
  *
- * 如果 server 指针为　NULL 表示连接本地服务。server 字符串可以使用
- * 	SERVERNAME:[PORT] 的形式指定端口。SERVERNAME 可以是　IP 地址，也可以是计算机名。
- * @see distdb_lasterror
+ * 在使用任何 distdb_* (distdb_version除外) 函数前调用他进行显示初始化。
  */
-int distdb_rpc_connectto(const char * server);
+void distdb_initalize();
+
 
 /**
- * @brief 断开RPC连接
+ * @brief 设置节点角色
+ * @param[in] __pdistdb_info 指向 distdb_info 结构的指针
+ * @param[in] retain 见详解
+ * @return 成功变成 server 角色就成 0，失败成 -1
+ *
+ * distdb 节点默认角色是 client-only
+ *
+ * client-only角色是那样的一种角色，它没有本地数据端，只能请求其他节点服务，
+ * 也不能接受其他节点的服务请求，只能发出请求，而无法做到进行服务。
+ *
+ * server 角色是那样的一种角色，它连接到本地数据端，能接受其他服务器的请求
+ * 并应答，同时，其自身也能要求其他节点进行服务。
+ *
+ * 当调用此函数，distdb 将转入server模式。
+ *
+ * 当调用 distdb_enable_server 的时候，默认会断开所有目前已经连接到的节点。要想连接更多节点，请调用
+ * distdb_connect 手工连接。如果 retain 不为 0 ， 则会重新连接  distdb_enable_server 调用时
+ * 还在线的节点，使用新身份登录。
+ *
+ * distdb直接运行 libdistdb.so(Linux平台由脚本 distdbd 执行，Windows平台为 distdb.exe )
+ * 的时候，其入口点将调用  distdb_enable_server 进入 server 模式。并间歇搜索新的节点，连接上去
+ *
+ * distdb 作为 共享库 libdistdb.so (Windows 下是 distdb.dll ， 和 distdb.exe 只是最后连接的时候参数不同 ) 运行的时候，如果调用者没有
+ * 调用 distdb_enable_server ， distdb 就进入了 client-only 模式。
+ *
+ * @see distdb_info
+ *
+ */
+int distdb_enable_server(struct distdb_info *__pdistdb_info,int retain);
+
+/**
+ * @brief 连接到指定的节点
+ * @param[in] server 服务器的字符串
+ *  		如果 server 指针为　NULL 表示连接本地服务。server 字符串可以使用
+ *   	SERVERNAME:[PORT] 的形式指定端口。SERVERNAME 可以是　IP 地址，也可以是计算机名。
+ * @return DISTDB_NODE *
+ *
+ * distdb_connect 连接到一个节点，并加入可用节点链表。这些节点将在您进行查询操作是被自动
+ * 操作，除非显示指定了操作的节点，否者所有已经连接的节点都会被自动操作。
+ *
+ */
+DISTDB_NODE distdb_connect(const char* server);
+
+/**
+ * @brief 断开某个节点的连接
+ * @param[in] node 服务器节点描述
  * @return 无
  *
- * 断开与 RPC 服务器的连接，一般在退出应用程序的时候使用。
+ * 断开与服务节点的连接
  */
-void distdb_rpc_disconnect();
+void distdb_disconnect(DISTDB_NODE node);
 
 /**
- * @brief 进行 distdb_rpc_execute_sql_* 调用时使用的旗标
+ * @brief 进行 distdb_execute_sql_* 调用时使用的旗标
  */
 enum executeflag{
 
 
-	DISTDB_RPC_EXECSQL_NOLOCAL	= 0x00000001,
+	DISTDB_EXECSQL_NOLOCAL	= 0x00000001,
 	/**< force distdb to send request to other computers*/
 
 
-	DISTDB_RPC_EXECSQL_NOSERVER = 0x00000002,
+	DISTDB_EXECSQL_NOSERVER = 0x00000002,
 	/**< force distdb to lookup locally*/
 
-	DISTDB_RPC_EXECSQL_NORESULT = 0x00000004 ,
+	DISTDB_EXECSQL_NORESULT = 0x00000004 ,
 	/**<force distdb to discard results*/
 
-	DISTDB_RPC_EXECSQL_ALLOWRECURSIVE = 0x00010000
+	DISTDB_EXECSQL_ALLOWRECURSIVE = 0x00000008,
 	/**< 允许在前一个SQL查询句柄还没有释放的情况下再次进行SQL操作*/
 
-	/** @see DISTDB_RPC_EXECSQL_NOLOCAL */
-#define DISTDB_RPC_EXECSQL_NOLOCAL DISTDB_RPC_EXECSQL_NOLOCAL
+	DISTDB_EXECSQL_NOTDIRECTCALL = 0x00010000,
+	/**< 内部使用，表示不是用户调用的*/
+	DISTDB_EXECSQL_NOBROADCAST = 0x00020000
+	/**< 内部使用，表示不用继续发送到其他节点*/
+
+#define DISTDB_EXECSQL_NOLOCAL DISTDB_EXECSQL_NOLOCAL
 	/**< force distdb to send request to other computers*/
 
-#define DISTDB_RPC_EXECSQL_SERVERONLY DISTDB_RPC_EXECSQL_NOLOCAL
-#define DISTDB_RPC_EXECSQL_NOSERVER	DISTDB_RPC_EXECSQL_NOSERVER
-#define DISTDB_RPC_EXECSQL_LOCALONLY	DISTDB_RPC_EXECSQL_NOSERVER
-#define DISTDB_RPC_EXECSQL_NORESULT DISTDB_RPC_EXECSQL_NORESULT
-#define DISTDB_RPC_EXECSQL_ALLOWRECURSIVE DISTDB_RPC_EXECSQL_ALLOWRECURSIVE
+#define DISTDB_RPC_EXECSQL_SERVERONLY DISTDB_EXECSQL_NOLOCAL
+#define DISTDB_RPC_EXECSQL_NOSERVER	DISTDB_EXECSQL_NOSERVER
+#define DISTDB_RPC_EXECSQL_LOCALONLY	DISTDB_EXECSQL_NOSERVER
+#define DISTDB_RPC_EXECSQL_NORESULT DISTDB_EXECSQL_NORESULT
+#define DISTDB_RPC_EXECSQL_ALLOWRECURSIVE DISTDB_EXECSQL_ALLOWRECURSIVE
 };
 
 /**
  * @brief 执行SQL语句
+ * @param[in] nodes 需要发送请求执行的节点列表
+ * 				如果为 NULL 就是所有已经连接的节点
+ * 				节点列表最后一项用 NULL 结尾
+ *
  * @param[out] out 查询结果句柄
  * @param[in] sql 查询语句 \n
  * 				必须是NULL结束的字符串 see distdb_rpc_execute_sql_bin
@@ -177,17 +270,20 @@ enum executeflag{
  *
  * 执行SQL语句,SQL语句
  */
-int distdb_rpc_execute_sql_str(struct DISTDB_SQL_RESULT ** out,const char * sql, int executeflag);
+int distdb_execute_sql_str(DISTDB_NODE * nodes,struct DISTDB_SQL_RESULT ** out,const char * sql, int executeflag);
 
 /**
  * @brief distdb_rpc_execute_sql_bin 执行SQL语句
+ * @param[in] nodes 需要发送请求执行的节点列表
+ * 				如果为 NULL 就是所有已经连接的节点
+ * 				节点列表最后一项用 NULL 结尾
  * @param[out] out 查询结果句柄
  * @param[in] sql 查询语句 允许包含NULL \n
  * 					@see distdb_rpc_execute_sql_str
  * @param[in] length 长度
  * @param[in] executeflag 查询模式，@see executeflag
  */
-int distdb_rpc_execute_sql_bin(struct DISTDB_SQL_RESULT ** out,const char *sql,size_t length,int executeflag);
+int distdb_execute_sql_bin(DISTDB_NODE * nodes,struct DISTDB_SQL_RESULT ** out,const char *sql,size_t length,int executeflag);
 
 // One call , one row, more row ? call more
 /**

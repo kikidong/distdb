@@ -28,9 +28,7 @@ struct db_exchange_header{
 			uint32_t execflag;
 			char sql_command[0];
 		}exec_sql;
-		struct {
-			int pad;
-		}ack_sql;
+		char					pad[4];
 	};
 };
 
@@ -40,7 +38,10 @@ struct db_exchange_header{
 
 enum db_exchange_type
 {
-	db_exchange_type_exec_sql = 1,
+	db_exchange_type_exec_sql = 0,
+	db_exchange_type_return_result = 1,
+
+
 
 };
 

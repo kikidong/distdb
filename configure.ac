@@ -153,7 +153,6 @@ LIB_VERSION_MAJOR=0
 LIB_VERSION_MINOR=0
 LIB_VERSION_CURRENT=1
 AC_SUBST(LIB_VERSION,"${LIB_VERSION_MAJOR}:${LIB_VERSION_CURRENT}:${LIB_VERSION_MINOR}")
-AC_DEFINE(RPC_DEFAULT_PORT,3721,[default port])
 AC_DEFINE(DISTDB_DEFAULT_PORT,3722,[default port])
 
 AC_DEFINE_UNQUOTED(PLUINGDIR,"${libdir}/distdb/",[The dir that hold plugin])
@@ -163,7 +162,6 @@ AC_CONFIG_FILES([
 				 nodes.db				 
                  include/Makefile
                  src/Makefile
-                 lib/Makefile
                  init/Makefile
                  db/Makefile
                  doc/Makefile

@@ -34,63 +34,92 @@
 
 #include "../include/global_var.h"
 #include "../include/distdb.h"
-#include "../include/rpc.h"
 #include "../include/db_def.h"
 
-
-
-void * connect_nodes(void *unused)
-{
-
-}
-
-
-/*
- * connet to ip and return the fd
+ /**
+ * @brief 执行登录
+ *
+ * 成功登录返回 0，登录失败返回 -1
  */
-static int connectto(struct sockaddr_in * peer)
+static int distdb_login(struct nodes * node)
 {
-	int ret;
-	int sk = socket(peer->sin_family,SOCK_STREAM,0);
+	char sendbuf[1024];
+	static char type[][16] = { { "client-only" },{ "server" } };
+	int len;
 
-	fcntl(sk,F_SETFL,fcntl(sk,F_GETFL)|O_NONBLOCK);
+	char ret_ok[16];
+	char ret_name[33];
+	char ret_type[32];
+	int ret_groupid;
 
-	if(sk > 0)
-		ret =  connect(sk,(struct sockaddr*)peer,INET_ADDRSTRLEN);
-	else
+
+	len = sprintf(sendbuf, "ACTION:LOGIN NAME:%s TYPE:%s GROUP:%d\n\n",
+			node_info.servername, type[node_type], node_info.groupid);
+	send(node->sock_peer, sendbuf, len, 0);
+
+	//FIXME 加入超时机制
+	recv(node->sock_peer,sendbuf,sizeof(sendbuf),0);
+
+	if (sscanf(sendbuf, "LOGIN:%15[^ ] NAME:%32[^ ] TYPE:%31[^ ] GROUP:%d\n\n",
+			ret_ok, ret_name, ret_type, &ret_groupid) != 4)
 		return -1;
-	if(ret && errno != EINPROGRESS)
-		close(sk);
-	return ret;
+	if(ret_ok[0]!='O' || ret_ok[1]!='K')
+		return -1;
+
+	if (strcmp(ret_type, "server") == 0)
+		node->type = 0;
+	else
+		node->type = 1;
+
+	node->groupid = ret_groupid;
+	node->lastactive = time(0);
+	return 0;
 }
 
-/*
- * connect to peers
- */
-static void* connect_peer(struct nodes * node)
+DISTDB_NODE distdb_connect(const char* server)
 {
-	pthread_t pt;
-	//connect
+	int sock_peer;
+	struct sockaddr_in peer;
+	struct nodes * newnode;
+	//连接并登录
+	memset(peer.sin_zero, 0, sizeof(peer.sin_zero));
+
+	peer.sin_family = AF_INET;
+	peer.sin_port = DISTDB_DEFAULT_PORT;
+	peer.sin_addr.s_addr = resoveserver(server, &peer.sin_port);
+	peer.sin_port = htons(peer.sin_port);
+
 	pthread_mutex_lock(&nodelist_lock);
-	if (node->sock_peer == 0)
+	if (peer_lookup_same(peer.sin_addr.s_addr)) //已经连接的就不再重复连接
 	{
-		//有可能执行到这里的时候已经连接上东东了呢！
-		node->sock_peer = connectto(&node->peer);
-	}
-	else
-	{
-		//已经被连接了，那就不用再费事连接到对方了
 		pthread_mutex_unlock(&nodelist_lock);
 		return 0;
 	}
-	//link to connected list
+	sock_peer = socket(AF_INET, SOCK_STREAM, 0);
 
-	node->refcount ++;
-	LIST_ADDTOTAIL(&node_connectedlist,& node->connectedlist);
-	LIST_DELETE_AT(&node->unconnectedlist);
-	node->refcount --;
+	if (sock_peer < 0)
+		return 0;
+
+	if (connect(sock_peer, (const struct sockaddr *) &peer, INET_ADDRSTRLEN)
+			< 0)
+	{
+		close(sock_peer);
+		pthread_mutex_unlock(&nodelist_lock);
+		return 0;
+	}
+
+	newnode = nodes_new();
+	newnode->peer = peer;
+	LIST_ADDTOTAIL(&nodelist, &newnode->nodelist);
 	pthread_mutex_unlock(&nodelist_lock);
-	return service_loop(node);
+
+	if (distdb_login(newnode))
+	{
+		//登录失败!从列表中移除
+		LIST_DELETE_AT(&newnode->nodelist);
+		newnode->freeer(newnode);
+	}
+	return (DISTDB_NODE) newnode;
 }
 
 int start_connect_nodes()
@@ -106,15 +135,15 @@ int start_connect_nodes()
 
 		pthread_mutex_lock(&nodelist_lock);
 
-		for (n = node_unconnectedlist.head; n
-				!= node_unconnectedlist.tail->next; n = n->next)
-		{
-			pthread_t pt;
-			if (!LIST_HEAD(n,nodes,unconnectedlist)->sock_peer) // only connect unconnected.
-				pthread_create(&pt, 0, (void *(*)(void *)) connect_peer,
-						LIST_HEAD(n,nodes,unconnectedlist));
-			//else n has been off link. Thank good ness, the n->next still works
-		}
+//		for (n = node_unconnectedlist.head; n
+//				!= node_unconnectedlist.tail->next; n = n->next)
+//		{
+//			pthread_t pt;
+//			if (!LIST_HEAD(n,nodes,unconnectedlist)->sock_peer) // only connect unconnected.
+//				pthread_create(&pt, 0, (void *(*)(void *)) connect_peer,
+//						LIST_HEAD(n,nodes,unconnectedlist));
+//			//else n has been off link. Thank good ness, the n->next still works
+//		}
 		pthread_mutex_unlock(&nodelist_lock);
 	} while (1);
 	return 0;
@@ -125,7 +154,7 @@ int open_nodes_socket()
 	int opt = 1;
 	struct sockaddr_in addr = {0};
 	addr.sin_family = AF_INET;
-	addr.sin_port = RPC_DEFAULT_PORT;
+	addr.sin_port = DISTDB_DEFAULT_PORT;
 	g_socket = socket(AF_INET, SOCK_DGRAM, 0);
 	setsockopt(g_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 	if (bind(g_socket, (struct sockaddr*) &addr, INET_ADDRSTRLEN) < 0)
@@ -136,3 +165,33 @@ int open_nodes_socket()
 	}
 	return listen(g_socket, 20);
 }
+
+int peer_lookup_same(in_addr_t ip)
+{
+	struct list_node * n;
+
+	pthread_mutex_lock(&nodelist_lock);
+
+	for (n = nodelist.head; n
+			!= nodelist.tail->next; n = n->next)
+	{
+		if(LIST_HEAD(n,nodes,nodelist)->peer.sin_addr.s_addr == ip)
+		{
+			pthread_mutex_unlock(&nodelist_lock);
+			return 1;
+		}
+	}
+	pthread_mutex_unlock(&nodelist_lock);
+	return 0;
+}
+
+void distdb_disconnect(DISTDB_NODE _node)
+{
+	struct nodes * node = (typeof(node))_node;
+	pthread_mutex_lock(&nodelist_lock);
+	close(node->sock_peer);
+	LIST_DELETE_AT(&node->nodelist);
+	node->freeer(node);
+	pthread_mutex_unlock(&nodelist_lock);
+}
+
