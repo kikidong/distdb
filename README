@@ -1,27 +1,3 @@
-
-distdb	-- 分布式数据库抽象层
-
-distdb 连接并使用本地数据库 (oracle (企业用户推荐) , mysql (开源用户推荐), sqlite3 (小型设备) )
-并试图在此之上抽象一个云。
-
-
-distdb 可以以2种模式运行 进程模式和库模式
-
-进程模式和库模式运行的是用一个二进制，这在 Linux 下是可能的。一个二进制文件既可以当动态链接库，也可以直接运行。
-
-在进程模式下，distdb 执行 main() 函数， main 函数就当自己连接到这个库，不使用任何内部函数。在其中显示调用
-distdb_enable_server 进行角色转换，进入 server 模式。并停留在一个随机循环中不断发掘节点
-
-
-在共享库模式下， distdb 在调用进程上下文运行。默认使用 client-only 模式。只需要连接到一个其他的节点就可以
-了，此时应该将默认启用 DISTDB_EXECSQL_NOLOCAL 选项。
-
-这样就可以避免使用昂贵的 RPC 接口了。
-
-distdb 为每一个连接到的节点使用一个线程。在收到相应的命令后，
-
-
-
-
-
-
+distdb is a Distributed Database. It can be build on top of other database engine such
+as mysql and sqlite3
+ 

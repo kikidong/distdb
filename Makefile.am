@@ -3,7 +3,7 @@ AM_CFLAGS = -fPIC -fpic
 
 SUBDIRS = include src init db doc
 
-EXTRA_DIST = nodes.db.in Doxygen.in distdb.conf.in
+EXTRA_DIST = nodes.db.in Doxygen.in distdb.conf.in README.zh_CN
 
 bin_PROGRAMS = distdb
 
