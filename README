@@ -1,6 +1,3 @@
-
-distdb	-- 分布式数据库抽象层
-
-distdb 连接并使用本地数据库 (oracle (企业用户推荐) , mysql (开源用户推荐), sqlite3 (小型设备) )
-并试图在此之上抽象一个云。
-
+distdb is a Distributed Database. It can be build on top of other database engine such
+as mysql and sqlite3
+ 

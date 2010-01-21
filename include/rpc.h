@@ -49,10 +49,13 @@ struct execute_sql_bin{
 };
 #define SIZE_EXECUTE_SQL_BIN 8
 
-struct rpc_sql_result{
+
+struct db_sql_result{
 	uint8_t	number;
 	uint8_t offsets[0];
 };
+
+#define rpc_sql_result db_sql_result
 
 #pragma pack(pop)
 
