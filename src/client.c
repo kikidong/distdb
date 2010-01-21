@@ -190,4 +190,3 @@ int distdb_rpc_fetch_result(struct DISTDB_SQL_RESULT * reslt,char ** result[])
 	*result = reslt->result;
 	return rbuff->ret;	 //:D
 }
-

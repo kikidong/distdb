@@ -11,7 +11,7 @@
  * original writer of this software.
  *
  */
-
+ 
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -49,41 +49,6 @@ void send_all(DISTDB_NODE * nodes, void* buff, size_t size, int flag)
 	struct nodes * node;
 
 	if (nodes)
-	if(!cf)
-	{
-		return -1;
-	}
-
-	char backend[128] = "sqlite";
-	void * dbplugin;
-	char * so_file;
-
-	get_profile_string(cf,"global","backend",backend,sizeof(backend));
-
-	so_file = strdup(PLUINGDIR);
-	so_file = realloc(so_file,strlen(so_file)+ strlen(backend) + 1 );
-	dbplugin = dlopen(so_file, RTLD_NOW);
-	free(so_file);
-	if(!dbplugin)
-	{
-		fprintf(stderr,dlerror());
-		close(cf);
-		return -1;
-	}
-	close(cf);
-	return 0;
-}
-
-extern void * getbase()
-{
-	return &db;
-}
-
-int	load_plugins(const char * configfile)
-{
-//	dbplugin = dlopen("sqlite.so",RTLD_NOW);
-
-	FILE *cf = fopen(configfile,"r");
 	{
 		node = (struct nodes *)(nodes[0]);
 		while (node)
@@ -106,12 +71,12 @@ int	load_plugins(const char * configfile)
 	}
 }
 
-int distdb_rpc_fetch_result(struct DISTDB_SQL_RESULT * in,char ** result[])
+int distdb_fetch_result(struct DISTDB_SQL_RESULT * in,char ** result[])
 {
 	return db.db_fetch_row(in,result);
 }
 
-int distdb_fetch_result(struct DISTDB_SQL_RESULT * reslt,char * data, size_t * retsize)
+int distdb_dfetch_result(struct DISTDB_SQL_RESULT * reslt,char * data, size_t * retsize)
 {
 	int i,retval;
 
@@ -121,7 +86,7 @@ int distdb_fetch_result(struct DISTDB_SQL_RESULT * reslt,char * data, size_t * r
 
 	char ** res;
 
-	retval = distdb_rpc_fetch_result(reslt,&res);
+	//retval = distdb_rpc_fetch_result(reslt,&res);
 
 	if (retval==-1)
 	{
@@ -144,9 +109,10 @@ int distdb_fetch_result(struct DISTDB_SQL_RESULT * reslt,char * data, size_t * r
 }
 
 
-int distdb_rpc_free_result(struct DISTDB_SQL_RESULT * p)
+int distdb_free_result(struct DISTDB_SQL_RESULT * p)
 {
 	db.db_free_result(p);
 	db.db_close(p);
 	free(p);
 }
+

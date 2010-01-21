@@ -49,12 +49,16 @@ int service_exec_sql(struct nodes* client, char * data, size_t * ret)
 	//收到！ 哈哈
 	struct DISTDB_SQL_RESULT	* result;
 	struct db_exchange_header * db_hdr = (typeof(db_hdr)) data;
-	distdb_execute_sql_bin(NULL, &result, db_hdr->exec_sql.sql_command,
-			db_hdr->exec_sql.execflag);
+	if(distdb_execute_sql_bin(NULL, &result, db_hdr->exec_sql.sql_command,
+			db_hdr->exec_sql.execflag));
+	{
+		*ret = 0;
+		return 0;
+	}
+	//fetch result and send back!
 
 
-
-}
+	// send EOF
 
 
 

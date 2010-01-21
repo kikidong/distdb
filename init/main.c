@@ -160,7 +160,9 @@ int main(int argc,char*argv[],char*env[])
 		printf("unable to read %s\n",cfg_progs.startup_node_file);
 		exit(EXIT_FAILURE);
 	}
-	load_plugins(config_file);
+	distdb_initalize();
+
+	distdb_enable_server(0,0);
 
 	distdb_initalize();
 

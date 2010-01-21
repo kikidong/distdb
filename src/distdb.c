@@ -165,7 +165,7 @@ int distdb_execute_sql_bin(DISTDB_NODE * nodes,struct DISTDB_SQL_RESULT ** out,c
 	if (executeflag & DISTDB_EXECSQL_NORESULT)
 	{
 		if(res)
-			distdb_rpc_free_result(res);
+			distdb_free_result(res);
 		*out = NULL;
 	}
 	else
