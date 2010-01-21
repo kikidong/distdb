@@ -24,19 +24,19 @@
 
 __BEGIN_DECLS
 
-struct nodes{
-	size_t		refcount;		 // refcount
-	void (*freeer)();			 // should call when free.
+struct nodes
+{
+	size_t refcount; // refcount
+	void (*freeer)(); // should call when free.
 	DEFINE_LIST(ticklist); // update the tick every beat
-	int			lastactive;
-	int			effectiveresponse;
+	int lastactive;
+	int effectiveresponse;
 	DEFINE_LIST(nodelist);
-	DEFINE_LIST(connectedlist);
-	DEFINE_LIST(unconnectedlist);
-	int					sock_peer;   // end point socket describe
- 	struct sockaddr_in	peer;			// end point
- 	int			groupid;		// groupid
- 	DEFINE_LIST(grouplist); // linked list that binds same group together.
+	int sock_peer; // end point socket describe
+	struct sockaddr_in peer; // end point
+	int groupid; // groupid
+	DEFINE_LIST(grouplist); // linked list that binds same group together.
+	int type; // 1 for client only
 };
 
 static inline struct nodes * nodes_new()
@@ -51,6 +51,6 @@ static inline int SAME_PEER(struct sockaddr_in	*peer1,struct sockaddr_in *	peer2
 {
 	return peer1->sin_addr.s_addr == peer2->sin_addr.s_addr;
 }
-void* service_loop(struct nodes * clientnode);
+void* service_loop(void*p);
 __END_DECLS
 #endif /* NODES_H_ */

@@ -162,17 +162,16 @@ int main(int argc,char*argv[],char*env[])
 	}
 	load_plugins(config_file);
 
-	load_plugins(config_file);
+	distdb_initalize();
+
+	distdb_enable_server(0,0);
 
 	//listen on local address
 	open_nodes_socket();
-
-	//listen on local RPC port
-	open_rpc_socket();
 
 	//start to connect to nodes at idle time
 	start_connect_nodes();
 
 	//the big event loop (main program defined in ../src)
-	return event_loop();
+//	return event_loop();
 }

@@ -12,7 +12,7 @@
 #ifndef DB_DEF_H_
 #define DB_DEF_H_
 #include <time.h>
-
+#include <pthread.h>
 __BEGIN_DECLS
 
 struct DISTDB_SQL_RESULT{
@@ -23,6 +23,7 @@ struct DISTDB_SQL_RESULT{
 	// the severs that receives the same requeset
 	int		columns; // columns that may return
 	void*	db_private_ptr;
+	pthread_mutex_t	lock; // protect this struct
 };
 
 __END_DECLS

@@ -28,16 +28,25 @@
 static char _zeropage[4096];
 
 
-int	g_rpc_socket,g_socket;
+int	g_socket;
 
 LIST_SLOT_DEFINE(nodelist);
-LIST_SLOT_DEFINE(node_unconnectedlist);
-LIST_SLOT_DEFINE(node_connectedlist);
+
 pthread_mutex_t nodelist_lock=PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
 
+int				  groupid; //本组号
 int				  groupcount;
 struct _groupmap *groupmap;
 
 void*			  zeropage = (void*)_zeropage;
 
+
 struct db_ops db;
+
+
+int node_type = 0;
+
+struct distdb_info	node_info={
+		.servername = "NONE",
+};
+
