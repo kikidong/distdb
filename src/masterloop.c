@@ -49,8 +49,26 @@ static int accepts(struct nodes ** pn)
 }
 
 
+int service_exec_sql(struct nodes* client, char * data, size_t * ret)
+{
+	//收到！ 哈哈
+	struct DISTDB_SQL_RESULT	* result;
+	struct db_exchange_header * db_hdr = (typeof(db_hdr)) data;
+	distdb_execute_sql_bin(NULL, &result, db_hdr->exec_sql.sql_command,
+			db_hdr->exec_sql.execflag);
+
+
+
+}
+
+
+
+
+static int service_stub(struct nodes* client, char * data, size_t * ret){*ret = 0;return -1;}
 static int (* service_call_table[20])(struct nodes*, char * data, size_t * ret)  =
 {
+		service_exec_sql,
+		service_stub
 
 };
 
@@ -71,6 +89,7 @@ void * massive_loop( struct nodes * client)
 
 		recv_len = recv(client->sock_peer, buffer, db_hdr.length, MSG_NOSIGNAL);
 //		rpc_dispatch(&client,&recv_len,buffer);
+		(service_call_table[db_hdr.type])(client,buffer,&recv_len);
 //		if(send(sock,buffer,recv_len,MSG_NOSIGNAL) < 0)
 //			break;
 		memset(buffer,0,buffersize);

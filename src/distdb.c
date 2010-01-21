@@ -106,7 +106,7 @@ int distdb_execute_sql_str(DISTDB_NODE * nodes,struct DISTDB_SQL_RESULT ** out,c
 
 int distdb_execute_sql_bin(DISTDB_NODE * nodes,struct DISTDB_SQL_RESULT ** out,const char *sql,size_t length,int executeflag)
 {
-
+	struct db_exchange_header * db_hdr;
 	struct DISTDB_SQL_RESULT * res;
 
 	void * db_private_ptr;
@@ -120,10 +120,12 @@ int distdb_execute_sql_bin(DISTDB_NODE * nodes,struct DISTDB_SQL_RESULT ** out,c
 
 
 	if (node_type) //哈哈，client-only 模式是不可以进行本地操作的啦
-		executeflag |= DISTDB_RPC_EXECSQL_NOLOCAL;
+		executeflag |= DISTDB_EXECSQL_NOLOCAL;
+
+
 
 	//制作步骤: 首先，您需要在本地查找(如果允许的话，呵呵) :)
-	if (!(executeflag & DISTDB_RPC_EXECSQL_NOLOCAL))
+	if (!(executeflag & DISTDB_EXECSQL_NOLOCAL))
 	{
 		//本地查找
 		db.db_open(res, executeflag & DISTDB_RPC_EXECSQL_ALLOWRECURSIVE);
@@ -138,12 +140,17 @@ int distdb_execute_sql_bin(DISTDB_NODE * nodes,struct DISTDB_SQL_RESULT ** out,c
 		} // 本地找都会出错，就不必麻烦远程电脑了
 	}
 
-	if (! ( executeflag & DISTDB_RPC_EXECSQL_NOSERVER))
+	// DISTDB_EXECSQL_NOSERVER 标志打开,但是，却是 direct call,也得执行！
+	//用这种形式是最好的啦
+	switch(executeflag & (DISTDB_EXECSQL_NOSERVER|DISTDB_EXECSQL_NOTDIRECTCALL|DISTDB_EXECSQL_NOBROADCAST))
 	{
+	case  DISTDB_EXECSQL_NOSERVER:
+	case  DISTDB_EXECSQL_NOTDIRECTCALL: //自然是要处理的啦
+		executeflag |= DISTDB_EXECSQL_NOBROADCAST;
+	case 0:
 		// 还要到远程电脑上整啊.. 真是的.
 		// 简单的发送一下命令就好了吧，接着记录，以便收到的时候进行合理的插入。
-		struct db_exchange_header * db_hdr = malloc(db_exchange_header_size
-				+ length + 2);
+		db_hdr = malloc(db_exchange_header_size + length + 2);
 
 		memset(db_hdr, 0, db_exchange_header_size + length + 2);
 
@@ -152,16 +159,17 @@ int distdb_execute_sql_bin(DISTDB_NODE * nodes,struct DISTDB_SQL_RESULT ** out,c
 		db_hdr->type = db_exchange_type_exec_sql;
 
 		//远程的电脑不需要再次查找远程的远程电脑吧，嘿嘿
-		db_hdr->exec_sql.execflag = executeflag | DISTDB_RPC_EXECSQL_NOSERVER;
+		db_hdr->exec_sql.execflag = executeflag | DISTDB_EXECSQL_NOTDIRECTCALL;
 		memcpy(db_hdr->exec_sql.sql_command,sql,length);
 
 		pthread_mutex_lock(&res->lock);
 		send_all(nodes,db_hdr,db_exchange_header_size + length + 1,0);
 		free(db_hdr);
 		pthread_mutex_unlock(&res->lock);
+		break;
 	}
 
-	if (executeflag & DISTDB_RPC_EXECSQL_NORESULT)
+	if (executeflag & DISTDB_EXECSQL_NORESULT)
 	{
 		if(res)
 			distdb_rpc_free_result(res);
