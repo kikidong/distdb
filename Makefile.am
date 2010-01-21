@@ -1,7 +1,7 @@
 
 SUBDIRS = include src init lib db doc
 
-EXTRA_DIST = nodes.db.in Doxygen.in distdb.conf.in
+EXTRA_DIST = nodes.db.in Doxygen.in distdb.conf.in README.zh_CN
 
 bin_PROGRAMS = distdb
 
