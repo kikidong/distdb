@@ -25,7 +25,6 @@
 #include <sys/poll.h>
 #include <pthread.h>
 #include "../include/global_var.h"
-#include "../include/rpc.h"
 #include "../include/communication.h"
 
 static int accepts(struct nodes ** pn)
@@ -49,17 +48,36 @@ static int accepts(struct nodes ** pn)
 	return 0;
 }
 
+
+static int (* service_call_table[20])(struct nodes*, char * data, size_t * ret)  =
+{
+
+};
+
+
 void * massive_loop( struct nodes * client)
 {
-	//从这里接受连接到的节点的请求
+	char *buffer;
+	struct db_exchange_header	db_hdr;
+	size_t recv_len;
 
+	const int buffersize = 8192;
 
+	buffer = valloc(buffersize);
+	//从这里接受连接到的节点的请求或者应答
 
+	while(recv(client->sock_peer,&db_hdr,db_exchange_header_size,MSG_NOSIGNAL|MSG_PEEK))
+	{
 
+		recv_len = recv(client->sock_peer, buffer, db_hdr.length, MSG_NOSIGNAL);
+//		rpc_dispatch(&client,&recv_len,buffer);
+//		if(send(sock,buffer,recv_len,MSG_NOSIGNAL) < 0)
+//			break;
+		memset(buffer,0,buffersize);
+	};
+	free(buffer);
 
-
-
-
+	//释放这个连接掌握的所有资源
 
 
 

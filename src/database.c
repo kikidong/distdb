@@ -30,7 +30,6 @@
 #include "../include/distdb.h"
 #include "../include/inifile.h"
 #include "../include/db_def.h"
-#include "../include/rpc.h"
 #include "../include/communication.h"
 
 extern void * getbase()
@@ -88,7 +87,7 @@ int distdb_fetch_result(struct DISTDB_SQL_RESULT * reslt,char * data, size_t * r
 
 	struct db_sql_result * srst = (typeof(srst))data;
 
-	srst->number = reslt->columns;
+//	srst->number = reslt->columns;
 
 	char ** res;
 
@@ -100,17 +99,17 @@ int distdb_fetch_result(struct DISTDB_SQL_RESULT * reslt,char * data, size_t * r
 		return -1;
 	}
 
-	char * real_result = (char*)(srst->offsets + reslt->columns);
+	//char * real_result = (char*)(srst->offsets + reslt->columns);
 
 	*retsize = reslt->columns +1 ;
-
-	for( i = 0; i < srst->number ; ++i )
-	{
-		strcpy(real_result,res[i]);
-		srst->offsets[i] = real_result - data;
-		real_result += strlen(res[i])+1;
-		*retsize += strlen(res[i])+1;
-	}
+//
+//	for( i = 0; i < srst->number ; ++i )
+//	{
+//		strcpy(real_result,res[i]);
+//		srst->offsets[i] = real_result - data;
+//		real_result += strlen(res[i])+1;
+//		*retsize += strlen(res[i])+1;
+//	}
 	return retval;
 }
 
