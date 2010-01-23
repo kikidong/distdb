@@ -122,33 +122,6 @@ DISTDB_NODE distdb_connect(const char* server)
 	return (DISTDB_NODE) newnode;
 }
 
-int start_connect_nodes()
-{
-	do
-	{
-		// 随机 休息 0 - 20 秒
-		sleep(rand() % 20);
-		//struct nodes * n;
-		pthread_t pt;
-
-		struct list_node * n;
-
-		pthread_mutex_lock(&nodelist_lock);
-
-//		for (n = node_unconnectedlist.head; n
-//				!= node_unconnectedlist.tail->next; n = n->next)
-//		{
-//			pthread_t pt;
-//			if (!LIST_HEAD(n,nodes,unconnectedlist)->sock_peer) // only connect unconnected.
-//				pthread_create(&pt, 0, (void *(*)(void *)) connect_peer,
-//						LIST_HEAD(n,nodes,unconnectedlist));
-//			//else n has been off link. Thank good ness, the n->next still works
-//		}
-		pthread_mutex_unlock(&nodelist_lock);
-	} while (1);
-	return 0;
-}
-
 int open_nodes_socket()
 {
 	int opt = 1;

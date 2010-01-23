@@ -68,6 +68,8 @@ struct cfg_progs
 
 }cfg_progs;
 
+struct distdb_info distdbinfo;
+
 static int getconfig(struct cfg_progs * cfg,int argc, char * argv[])
 {
 	char	keyval[128];
@@ -92,6 +94,30 @@ static int getconfig(struct cfg_progs * cfg,int argc, char * argv[])
 
 	get_profile_string(cfile,"global","nodes_file",cfg->startup_node_file,1024);
 	get_profile_string(cfile,"global","nodes_url",cfg->url_nodefile,8192);
+	get_profile_string(cfile,"global","node_name",(char*)distdbinfo.servername,8192);
+	get_profile_string(cfile,"global","backend",keyval,8192);
+	if(strcmp("sqlite",keyval)==0)
+	{
+		distdbinfo.backend = 0;
+	}else if(strcmp("mysql",keyval)==0)
+	{
+		distdbinfo.backend = 1;
+	}
+	else if (strcmp("oracle", keyval) == 0)
+	{
+		distdbinfo.backend = 2;
+
+	}
+	else if (strcmp("oci", keyval) == 0)
+	{
+		distdbinfo.backend = 2;
+	}
+	else
+	{
+		perror("非法的数据库后端\n");
+		exit(1);
+	}
+
 	fclose(cfile);
 	return 0;
 }
@@ -147,8 +173,6 @@ static int download_node_file(const char * url,const char * file, int reason)
 	return reason;
 }
 
-//extern int _start(){	syscall1(0);	_exit(0);}
-
 int main(int argc,char*argv[],char*env[])
 {
 	getconfig(&cfg_progs, argc, argv);
@@ -160,6 +184,13 @@ int main(int argc,char*argv[],char*env[])
 		exit(EXIT_FAILURE);
 	}
 
+
+	distdb_initalize();
+
+
+	//Turn to server mode
+	distdb_enable_server(&distdbinfo,0);
+
 	// read nodes
 	if (read_nodes(cfg_progs.startup_node_file))
 	{
@@ -167,16 +198,5 @@ int main(int argc,char*argv[],char*env[])
 		exit(EXIT_FAILURE);
 	}
 
-	distdb_initalize();
-
-	distdb_enable_server(0,0);
-
-	//listen on local address
-	open_nodes_socket();
-
 	//start to connect to nodes at idle time
-	start_connect_nodes();
-
-	//the big event loop (main program defined in ../src)
-//	return event_loop();
 }
