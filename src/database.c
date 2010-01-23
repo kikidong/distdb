@@ -41,14 +41,6 @@ extern void * getbase()
 	return &ret;
 }
 
-//void close_node(struct nodes* n)
-//{
-//	close(n->sock_peer);
-//	n->sock_peer = 0;
-//	LIST_DELETE_AT(&n->connectedlist);
-//	LIST_ADDTOTAIL(&node_unconnectedlist,&n->unconnectedlist);
-//}
-//
 int send_all(DISTDB_NODE * nodes, void* buff, size_t size, int flag)
 {
 	int count;
@@ -89,27 +81,62 @@ int distdb_fetch_result_local(struct DISTDB_SQL_RESULT * in, char ** result[])
 int distdb_fetch_result(struct DISTDB_SQL_RESULT * in, char ** result[])
 {
 	//获得一个结果，而不管所在地.
+
 	char *data;
 	int ret;
-	ret = db.db_peek_row(in, result);
-	if (ret == 0)
-		return 0;
+
+	if (in->needclose != -1) //本地还有数据
+	{
+		ret = db.db_peek_row(in, result);
+
+		if (ret == 0)
+			return 0;
+		if( ret ==-1)
+			distdb_free_local_result(in);
+	}
 	//没有数据,看远程的有没有哈.
-	return distdb_fetch_result_remote(in, result);
+	ret =  distdb_fetch_result_remote(in, result,1);
+	if (ret == 1 && in->needclose == -1)
+	{ //远程的没来，本地也没有，等待远程
+		return distdb_fetch_result_remote(in, result,0);
+	}else if( ret == 1 && in->needclose != -1 )
+	{
+		//远程的没来，本地或许有，等待本地
+		ret = distdb_fetch_result_local(in,result);
+		if(ret==-1)
+		{
+			//本地的没了
+			distdb_free_local_result(in);
+			return distdb_fetch_result(in,result);
+		}
+	}else
+		return ret;
 }
 
 /**
  * 获得远程返回的结果，
  */
 int distdb_fetch_result_remote(struct DISTDB_SQL_RESULT * reslt,
-		char ** result[])
+		char ** result[], int ifpeek)
 {
 	struct sql_result_plain_text * ptext;
 	pthread_mutex_lock(&reslt->lock);
 	if (LIST_ISEMPTY(reslt->sql_result))
 	{
-		if (reslt->ref) //还有结果会陆续进来，呵呵
+		if (reslt->ref && !ifpeek) //还有结果会陆续进来，呵呵
+		{
 			pthread_cond_wait(&reslt->waitcond, &reslt->lock);
+		}
+		else if (reslt->ref && ifpeek)
+		{
+			pthread_mutex_unlock(&reslt->lock);
+			return 1;
+		}
+		else if( reslt->ref ==0)
+		{
+			pthread_mutex_unlock(&reslt->lock);
+			return -1;
+		}
 	}
 	if (reslt->ref == 0)
 		return -1;
