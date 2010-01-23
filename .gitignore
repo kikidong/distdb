@@ -25,3 +25,5 @@ distdb.*
 html/
 latex/
 doc/
+include/rpc.old.h
+src/rpc_op.old.c

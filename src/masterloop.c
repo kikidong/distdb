@@ -16,10 +16,14 @@
  * Master loop --
  * listen on local service port and accept other nodes' connection
  */
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include <sys/poll.h>
 #include <pthread.h>
 #include "../include/global_var.h"
+#include "../include/distdb.h"
 #include "../include/communication.h"
 
 static int accepts(struct nodes ** pn)
@@ -48,25 +52,94 @@ int service_exec_sql(struct nodes* client, char * data, size_t * ret)
 {
 	//收到！ 哈哈
 	struct DISTDB_SQL_RESULT	* result;
+	char 					**	  table;
+	struct sql_result_plain_text* ptext;
+
 	struct db_exchange_header * db_hdr = (typeof(db_hdr)) data;
-	if(distdb_execute_sql_bin(NULL, &result, db_hdr->exec_sql.sql_command,
-			db_hdr->exec_sql.execflag));
+	result = db_hdr->restptr;
+	if (distdb_execute_sql_bin(NULL, &result, db_hdr->sql_command,
+			db_hdr->length - db_exchange_header_size, db_hdr->execflag))
 	{
 		*ret = 0;
 		return 0;
 	}
-	//fetch result and send back!
-
-
+	//fetch result and send back! 只获得本地结果，远程结果直接转发
+	while (distdb_fetch_result_local(result, &table) == 0)
+	{
+		ptext = convert_strtable2plain(result->columns, table);
+		db_hdr->type = db_exchange_type_return_result;
+		db_hdr->length = ptext->size + db_exchange_header_size;
+		send(client->sock_peer, db_hdr, db_exchange_header_size, MSG_NOSIGNAL);
+		send(client->sock_peer, ptext->plaindata, ptext->size, MSG_NOSIGNAL);
+		free(ptext);
+	}
 	// send EOF
+	db_hdr->type = db_exchange_type_end_result ;
+	send(client->sock_peer,db_hdr,db_exchange_header_size,MSG_NOSIGNAL);
+	distdb_free_local_result(result);
+	return 0;
+}
 
+static int service_accpet_result(struct nodes* client, char * data, size_t * ret)
+{
+	struct DISTDB_SQL_RESULT	* result;
+	char 					**	  table;
+	struct sql_result_plain_text * res_plain;
 
+	struct db_exchange_header * db_hdr = (typeof(db_hdr)) data;
 
+	result = db_hdr->restptr ;
+
+	if(db_hdr->execflag & DISTDB_EXECSQL_NORESULT) // 没要结果的，偶这里也不会有结果的
+		return *ret = 0;
+
+	pthread_mutex_lock(&result->lock);
+	//记录下来，呵呵 :)
+	//看是否需要挂入列队。
+	if(result->old_res)
+	{ // 看来是一个中间人啊，呵呵
+		db_hdr->restptr = result->old_res ;
+		pthread_mutex_unlock(&result->lock);
+		send(result->client->sock_peer,data,*ret,0);
+		return 0;
+	}
+
+	res_plain = malloc(*ret);
+	res_plain->size = db_hdr->length - db_exchange_header_size;
+
+	memcpy(res_plain->plaindata,db_hdr->data,res_plain->size);
+	//挂入列队 ：）
+	LIST_ADDTOTAIL(&result->sql_result,&res_plain->resultlist);
+	pthread_mutex_unlock(&result->lock);
+	return pthread_cond_signal(&result->waitcond);
+	//唤醒可能沉睡的主线程
+}
+
+static int service_result_close(struct nodes* client, char * data, size_t * ret)
+{
+//	service_
+	struct DISTDB_SQL_RESULT	* result;
+	char 					**	  table;
+	struct sql_result_plain_text * res_plain;
+
+	struct db_exchange_header * db_hdr = (typeof(db_hdr)) data;
+
+	//Add 验证机制
+	distdb_free_remote_result(db_hdr->restptr);
+}
 
 static int service_stub(struct nodes* client, char * data, size_t * ret){*ret = 0;return -1;}
 static int (* service_call_table[20])(struct nodes*, char * data, size_t * ret)  =
 {
 		service_exec_sql,
+		service_accpet_result,
+		service_result_close,
+		service_stub,
+		service_stub,
+		service_stub,
+		service_stub,
+		service_stub,
+		service_stub,
 		service_stub
 
 };

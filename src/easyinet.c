@@ -28,6 +28,7 @@
 #include <netdb.h>
 
 #include "../include/distdb.h"
+#include "../include/db_def.h"
 
 /**
  * @brief 转化为 ip 地址,如果有的话，端口
@@ -63,4 +64,35 @@ in_addr_t resoveserver(const char * servername,int * port)
 	else
 		ip = LOCALHOST;
 	return ip;
+}
+
+/**
+ * @brief 将字符串表平坦化
+ */
+struct sql_result_plain_text* convert_strtable2plain( int colum, char * tables[])
+{
+	struct sql_result_plain_text* ret;
+	int							i,offset;
+	size_t						maxlen;
+	//首先是计算所需要的大小
+	size_t	sizes[colum];
+
+	for (i = maxlen = 0; i < colum; i++)
+	{
+		sizes[i] = strlen(tables[i]);
+		maxlen += sizes[i] + 1; // 包含结尾的 NULL 呵呵
+	}
+
+	ret = malloc(maxlen + size_sql_result_plain_text);
+	ret->size = maxlen + size_sql_result_plain_text - sizeof(list_slot);
+	ret->resultlist.next = ret->resultlist.prev = & ret->resultlist;
+	ret->colums = colum;
+	for (i = 0, offset = sizeof(struct text_slot) * colum + sizeof(int); i < colum; ++i)
+	{
+		ret->strings[i].length = sizes[i];
+		ret->strings[i].offset = offset;
+		strcpy(ret->plaindata + offset, tables[i]);
+		offset += sizes[i] + 1;
+	}
+	return ret;
 }

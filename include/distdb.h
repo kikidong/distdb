@@ -35,22 +35,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifndef HAVE_GETLINE
-
-static inline size_t getline (char ** __lineptr,size_t * __n,FILE * __stream)
-{
-	int malloc_called = 1024;
-	if(!*__lineptr)
-		malloc(malloc_called++);
-	if(fgets(*__lineptr,1024,__stream))
-		return (*__n = strlen(*__lineptr));
-	else if(malloc_called>1024)
-		free(*__lineptr);
-	return * __n = 0;
-}
-
-#endif
-
 #ifdef __DISTDB_SERVER_SIDE_H
 
 #ifndef MIN
