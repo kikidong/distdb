@@ -296,7 +296,7 @@ int distdb_execute_sql_bin(DISTDB_NODE * nodes,struct DISTDB_SQL_RESULT ** out,c
  * 	{
  * 	  // DO SOME THIME
  * 	}
- * 	distdb_rpc_free_result(res);
+ * 	distdb_free_result(res);
  * }
  * @endcode
  */
@@ -308,7 +308,7 @@ int distdb_fetch_result(struct DISTDB_SQL_RESULT * in ,char ** result[]);
  *
  * @param[in] in SQL查询结果集。
  * @param[in] waitflag 等待的类型
- * @param[in] timeout 等待超时， -1 为永久等待。强烈建议您放弃使用 -1。 因为网络的故障，将有可能导致
+ * @param[in] timeout 等待超时， -1 为永久等待。强烈建议您放弃使用 -1。 因为网络的故障，将有可能导致永远无法从等待中恢复
  * @retval	  0 表示一个或者多个查询结果已经满足，可以使用,注意，这并不代表一定有结果。如果结果确实为空集，
  * 				远程电脑已经响应此空集的结果，调用此函数也会返回 0
  * 				似乎返回0只能告诉你，此时调用 distdb_fetch_result 将不会阻塞。
@@ -316,7 +316,6 @@ int distdb_fetch_result(struct DISTDB_SQL_RESULT * in ,char ** result[]);
  * @retval    1 等待超时，试试看再次等待。如果已经等待足够长的时间，偶还是建议你放弃等待并视结果为空集
  * @retval	 -1 等待时出现错误。 吼吼，偶建议您还是直接关闭句柄为妙。
  *
- * 永远无法从等待中恢复
  *
  * distdb 查询结果并不能立即出现，有时候会出现网络故障，直接调用 distdb_fetch_result 或许并不是一个好主意.
  * 在试图获得结果前等待结果并设置超时绝对会是一个好主意。
