@@ -16,8 +16,6 @@
  * this company.
  */
 
-
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -34,10 +32,12 @@
 
 extern void * getbase()
 {
-	static struct {
+	static struct
+	{
 		struct db_ops *dbops;
-		struct distdb_info * info ;
-	}ret={&db,&node_info};
+		struct distdb_info * info;
+	} ret =
+	{ &db, &node_info };
 	return &ret;
 }
 
@@ -49,17 +49,20 @@ extern void * getbase()
 //	LIST_ADDTOTAIL(&node_unconnectedlist,&n->unconnectedlist);
 //}
 //
-void send_all(DISTDB_NODE * nodes, void* buff, size_t size, int flag)
+int send_all(DISTDB_NODE * nodes, void* buff, size_t size, int flag)
 {
+	int count;
 	struct nodes * node;
+	count = 0;
 
 	if (nodes)
 	{
-		node = (struct nodes *)(nodes[0]);
+		node = (struct nodes *) (nodes[0]);
 		while (node)
 		{
 			send(node->sock_peer, buff, size, flag);
 			node++;
+			count++;
 		}
 	}
 	else
@@ -71,52 +74,85 @@ void send_all(DISTDB_NODE * nodes, void* buff, size_t size, int flag)
 		{
 			node = LIST_HEAD(n,nodes,nodelist);
 			send(node->sock_peer, buff, size, flag);
+			count++;
 		}
 		pthread_mutex_unlock(&nodelist_lock);
 	}
+	return count;
 }
 
-int distdb_fetch_result(struct DISTDB_SQL_RESULT * in,char ** result[])
+int distdb_fetch_result_local(struct DISTDB_SQL_RESULT * in, char ** result[])
 {
-	return db.db_fetch_row(in,result);
+	return db.db_fetch_row(in, result);
 }
 
-int distdb_dfetch_result(struct DISTDB_SQL_RESULT * reslt,char * data, size_t * retsize)
+int distdb_fetch_result(struct DISTDB_SQL_RESULT * in, char ** result[])
 {
-	int i,retval;
+	//获得一个结果，而不管所在地.
+	char *data;
+	int ret;
+	ret = db.db_peek_row(in, result);
+	if (ret == 0)
+		return 0;
+	//没有数据,看远程的有没有哈.
+	return distdb_fetch_result_remote(in, result);
+}
 
-	struct db_sql_result * srst = (typeof(srst))data;
-
-//	srst->number = reslt->columns;
-
-	char ** res;
-
-	//retval = distdb_rpc_fetch_result(reslt,&res);
-
-	if (retval==-1)
+/**
+ * 获得远程返回的结果，
+ */
+int distdb_fetch_result_remote(struct DISTDB_SQL_RESULT * reslt,
+		char ** result[])
+{
+	struct sql_result_plain_text * ptext;
+	pthread_mutex_lock(&reslt->lock);
+	if (LIST_ISEMPTY(reslt->sql_result))
 	{
-		*retsize = 0;
-		return -1;
+		if (reslt->ref) //还有结果会陆续进来，呵呵
+			pthread_cond_wait(&reslt->waitcond, &reslt->lock);
 	}
+	if (reslt->ref == 0)
+		return -1;
 
-	//char * real_result = (char*)(srst->offsets + reslt->columns);
+	if (reslt->last)
+		free(reslt->last);
 
-	*retsize = reslt->columns +1 ;
-//
-//	for( i = 0; i < srst->number ; ++i )
-//	{
-//		strcpy(real_result,res[i]);
-//		srst->offsets[i] = real_result - data;
-//		real_result += strlen(res[i])+1;
-//		*retsize += strlen(res[i])+1;
-//	}
-	return retval;
+	ptext = LIST_HEAD(reslt->sql_result.head,sql_result_plain_text,resultlist);
+	LIST_DELETE_AT(&ptext->resultlist);
+	reslt->last = ptext;
+	pthread_mutex_unlock(&reslt->lock);
+	return 0;
 }
 
-
-int distdb_free_result(struct DISTDB_SQL_RESULT * p)
+int distdb_free_local_result(struct DISTDB_SQL_RESULT * p)
 {
 	db.db_free_result(p);
 	db.db_close(p);
-	free(p);
+	p->needclose = -1;
+}
+
+int distdb_free_remote_result(struct DISTDB_SQL_RESULT * p)
+{
+	struct list_node *n;
+	pthread_mutex_lock(&p->lock);
+	p->ref--;
+	if (p->ref <= 0)
+	{ //free 掉链表
+		for (n = p->sql_result.head; n != p->sql_result.tail->next; n++)
+		{
+			free(LIST_HEAD(n,sql_result_plain_text,resultlist));
+		}
+		free(p);
+	}
+	pthread_mutex_unlock(&p->lock);
+}
+
+int distdb_free_result(struct DISTDB_SQL_RESULT*p)
+{
+	pthread_mutex_lock(&p->lock);
+	if (p->needclose != -1)
+		distdb_free_local_result(p);
+	p->ref = 1;
+	pthread_mutex_unlock(&p->lock);
+	distdb_free_remote_result(p);
 }

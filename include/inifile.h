@@ -21,6 +21,23 @@
 
 #include <stdio.h>
 
+
+#ifndef HAVE_GETLINE
+
+static inline size_t getline (char ** __lineptr,size_t * __n,FILE * __stream)
+{
+	int malloc_called = 1024;
+	if(!*__lineptr)
+		malloc(malloc_called++);
+	if(fgets(*__lineptr,1024,__stream))
+		return (*__n = strlen(*__lineptr));
+	else if(malloc_called>1024)
+		free(*__lineptr);
+	return * __n = 0;
+}
+
+#endif
+
 extern int get_profile_string(FILE *fp, char *AppName,const char const *KeyName, char *KeyValue,size_t KEYVALLEN);
 
 #endif /* INIFILE_H_ */

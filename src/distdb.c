@@ -115,18 +115,19 @@ int distdb_execute_sql_bin(DISTDB_NODE * nodes,struct DISTDB_SQL_RESULT ** out,c
 
 	*out = 0;
 
-	res = (typeof(res)) malloc(sizeof(struct DISTDB_SQL_RESULT));
-	pthread_mutex_init(&res->lock,0);
+	res = DISTDB_SQL_RESULT_NEW();
 
+	if (executeflag & DISTDB_EXECSQL_NOTDIRECTCALL)
+		res->old_res = *out;
 
 	if (node_type) //哈哈，client-only 模式是不可以进行本地操作的啦
 		executeflag |= DISTDB_EXECSQL_NOLOCAL;
 
 
-
 	//制作步骤: 首先，您需要在本地查找(如果允许的话，呵呵) :)
 	if (!(executeflag & DISTDB_EXECSQL_NOLOCAL))
 	{
+		res->ref ++;
 		//本地查找
 		db.db_open(res, executeflag & DISTDB_RPC_EXECSQL_ALLOWRECURSIVE);
 
@@ -159,20 +160,23 @@ int distdb_execute_sql_bin(DISTDB_NODE * nodes,struct DISTDB_SQL_RESULT ** out,c
 		db_hdr->type = db_exchange_type_exec_sql;
 
 		//远程的电脑不需要再次查找远程的远程电脑吧，嘿嘿
-		db_hdr->exec_sql.execflag = executeflag | DISTDB_EXECSQL_NOTDIRECTCALL;
-		memcpy(db_hdr->exec_sql.sql_command,sql,length);
+		db_hdr->execflag = executeflag | DISTDB_EXECSQL_NOTDIRECTCALL;
+		memcpy(db_hdr->sql_command,sql,length);
 
 		pthread_mutex_lock(&res->lock);
-		send_all(nodes,db_hdr,db_exchange_header_size + length + 1,0);
-		free(db_hdr);
+		res->ref += send_all(nodes,db_hdr,db_exchange_header_size + length + 1,0);
 		pthread_mutex_unlock(&res->lock);
+		free(db_hdr);
 		break;
 	}
 
 	if (executeflag & DISTDB_EXECSQL_NORESULT)
 	{
 		if(res)
+		{
 			distdb_free_result(res);
+		}
+
 		*out = NULL;
 	}
 	else

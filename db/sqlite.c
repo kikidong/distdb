@@ -160,7 +160,7 @@ void __init()
 
 	db->db_get_result = get_result;
 
-	db->db_fetch_row = fetch_row;
+	db->db_peek_row = db->db_fetch_row = fetch_row; // 不需要，呵呵
 
 	db->db_free_result = free_reslut;
 
