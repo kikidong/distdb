@@ -57,12 +57,13 @@ struct DISTDB_SQL_RESULT{
 	int		needclose;		 // set 1 if need close the db, set -1 if have closed local db
 	int		ref;
 	// the severs that receives the same requeset
-	int		columns; // columns that may return
+	int		colums; // columns that may return
 	void*	db_private_ptr;
 	pthread_mutex_t	lock; // protect this struct
 	pthread_cond_t	waitcond;
 	list_slot sql_result;
 	struct sql_result_plain_text * last; // 记录上次使用的。记得释放
+	char						** last_table; //记得释放。
 	struct DISTDB_SQL_RESULT * old_res; // old result, NON-NULL means we should not save the incoming result, but re-send it
 };
 

@@ -117,8 +117,9 @@ int distdb_fetch_result(struct DISTDB_SQL_RESULT * in, char ** result[])
  * 获得远程返回的结果，
  */
 int distdb_fetch_result_remote(struct DISTDB_SQL_RESULT * reslt,
-		char ** result[], int ifpeek)
+		char ** table[], int ifpeek)
 {
+	int i;
 	struct sql_result_plain_text * ptext;
 	pthread_mutex_lock(&reslt->lock);
 	if (LIST_ISEMPTY(reslt->sql_result))
@@ -147,6 +148,12 @@ int distdb_fetch_result_remote(struct DISTDB_SQL_RESULT * reslt,
 	ptext = LIST_HEAD(reslt->sql_result.head,sql_result_plain_text,resultlist);
 	LIST_DELETE_AT(&ptext->resultlist);
 	reslt->last = ptext;
+
+	for (i = 0; i < reslt->colums; ++i)
+	{
+		reslt ->last_table[i] = ptext->plaindata + ptext->strings[i].offset;
+	}
+
 	pthread_mutex_unlock(&reslt->lock);
 	return 0;
 }
@@ -156,6 +163,7 @@ int distdb_free_local_result(struct DISTDB_SQL_RESULT * p)
 	db.db_free_result(p);
 	db.db_close(p);
 	p->needclose = -1;
+	free(p->last_table);
 }
 
 int distdb_free_remote_result(struct DISTDB_SQL_RESULT * p)

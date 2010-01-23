@@ -23,7 +23,6 @@ struct _groupmap{
 struct db_ops{
 	int (*db_open)(struct DISTDB_SQL_RESULT * res,int reopen);
 	int (*db_exec_sql)(struct DISTDB_SQL_RESULT*,const char*,int len);
-	int (*db_get_result)(struct DISTDB_SQL_RESULT*);
 	int (*db_fetch_row)(struct DISTDB_SQL_RESULT*,char ***); // 0 for ok, -1 for no more
 	int (*db_peek_row)(struct DISTDB_SQL_RESULT*,char ***); // 0 for ok, -1 for no more, 1 for time out
 	int (*db_free_result)(struct DISTDB_SQL_RESULT*);

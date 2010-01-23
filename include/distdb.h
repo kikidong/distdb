@@ -119,11 +119,13 @@ struct distdb_info{
 			const char  * dbhost;  /**<mysql数据库名称*/
 			const char  * dbuser;  /**<连接到mysql数据库所使用的用户名*/
 			const char  * dbpass;  /**<数据库密码*/
+			const char  * db;    //数据库
 		}mysql_backend_info;
 		struct {
 			const char	* dbhost;  /**<oracle数据库*/
 			const char  * dbuser;  /**<oracle数据库用户*/
 			const char  * dbpass;  /**<oracle数据库密码*/
+			const char  * db;		/**<oracle数据库*/
 		}occi_backend_info;
 	}backend_info;
 	const char *	node_file; /**<节点数据库文件名。
@@ -214,31 +216,30 @@ enum executeflag{
 
 
 	DISTDB_EXECSQL_NOLOCAL	= 0x00000001,
-	/**< force distdb to send request to other computers*/
+	/**< 不查找本机数据库*/
 
 
 	DISTDB_EXECSQL_NOSERVER = 0x00000002,
-	/**< force distdb to lookup locally*/
+	/**< 不广播请求到其他节点*/
 
 	DISTDB_EXECSQL_NORESULT = 0x00000004 ,
-	/**<force distdb to discard results*/
+	/**<丢弃结果。对结果不敢兴趣*/
 
 	DISTDB_EXECSQL_ALLOWRECURSIVE = 0x00000008,
 	/**< 允许在前一个SQL查询句柄还没有释放的情况下再次进行SQL操作*/
 
 	DISTDB_EXECSQL_NOTDIRECTCALL = 0x00010000,
-	/**< 内部使用，表示不是用户调用的*/
+	/* 内部使用，表示不是用户调用的*/
 	DISTDB_EXECSQL_NOBROADCAST = 0x00020000
-	/**< 内部使用，表示不用继续发送到其他节点*/
+	/* 内部使用，表示不用继续发送到其他节点*/
 
-#define DISTDB_EXECSQL_NOLOCAL DISTDB_EXECSQL_NOLOCAL
-	/**< force distdb to send request to other computers*/
-
+#define DISTDB_EXECSQL_SERVERONLY DISTDB_EXECSQL_NOLOCAL
 #define DISTDB_RPC_EXECSQL_SERVERONLY DISTDB_EXECSQL_NOLOCAL
 #define DISTDB_RPC_EXECSQL_NOSERVER	DISTDB_EXECSQL_NOSERVER
 #define DISTDB_RPC_EXECSQL_LOCALONLY	DISTDB_EXECSQL_NOSERVER
 #define DISTDB_RPC_EXECSQL_NORESULT DISTDB_EXECSQL_NORESULT
 #define DISTDB_RPC_EXECSQL_ALLOWRECURSIVE DISTDB_EXECSQL_ALLOWRECURSIVE
+
 };
 
 /**
@@ -249,10 +250,12 @@ enum executeflag{
  *
  * @param[out] out 查询结果句柄
  * @param[in] sql 查询语句 \n
- * 				必须是NULL结束的字符串 see distdb_rpc_execute_sql_bin
- * @param[in] executeflag 查询模式，see executeflag
+ * 				必须是NULL结束的字符串
+ * @param[in] executeflag 查询模式，
  *
  * 执行SQL语句,SQL语句
+ *
+ * @see executeflag distdb_execute_sql_bin
  */
 int distdb_execute_sql_str(DISTDB_NODE * nodes,struct DISTDB_SQL_RESULT ** out,const char * sql, int executeflag);
 
@@ -263,13 +266,14 @@ int distdb_execute_sql_str(DISTDB_NODE * nodes,struct DISTDB_SQL_RESULT ** out,c
  * 				节点列表最后一项用 NULL 结尾
  * @param[out] out 查询结果句柄
  * @param[in] sql 查询语句 允许包含NULL \n
- * 					@see distdb_rpc_execute_sql_str
+ *
  * @param[in] length 长度
- * @param[in] executeflag 查询模式，@see executeflag
+ * @param[in] executeflag 查询模式
+ *
+ * @see executeflag distdb_execute_sql_str
  */
 int distdb_execute_sql_bin(DISTDB_NODE * nodes,struct DISTDB_SQL_RESULT ** out,const char *sql,size_t length,int executeflag);
 
-// One call , one row, more row ? call more
 /**
  * @brief 获得一行查询结果
  * @param[in] in 查询结果句柄
@@ -278,24 +282,47 @@ int distdb_execute_sql_bin(DISTDB_NODE * nodes,struct DISTDB_SQL_RESULT ** out,c
  * @retval -1	执行失败。
  * @retval 1	没有更多的结果了
  *
- * 对于没一行 SQL 查询结果，都要运行一次 distdb_rpc_fetch_result 。
+ * One call , one row, more row ? call more
+ * 对于每一行 SQL 查询结果，都要运行一次 distdb_fetch_result 。
  *
  * @par 示例:
  *
  * @code
  * DISTDB_SQL_RESULT	*res;
  * char			*table[];
- * if(!distdb_rpc_execute_sql_str(&res,"select * from testdb",0))
+ * if(!distdb_execute_sql_str(&res,"select * from testdb",0))
  * {
- * 	while(distdb_rpc_fetch_result(res,&table)==0)
+ * 	while(distdb_fetch_result(res,&table)==0)
  * 	{
  * 	  // DO SOME THIME
  * 	}
  * 	distdb_rpc_free_result(res);
  * }
- * @endcode *
+ * @endcode
  */
-int distdb_rpc_fetch_result(struct DISTDB_SQL_RESULT * in ,char ** result[]);
+int distdb_fetch_result(struct DISTDB_SQL_RESULT * in ,char ** result[]);
+
+
+/**
+ * @brief 等待结果的出现。
+ *
+ * @param[in] in SQL查询结果集。
+ * @param[in] waitflag 等待的类型
+ * @param[in] timeout 等待超时， -1 为永久等待。强烈建议您放弃使用 -1。 因为网络的故障，将有可能导致
+ * @retval	  0 表示一个或者多个查询结果已经满足，可以使用,注意，这并不代表一定有结果。如果结果确实为空集，
+ * 				远程电脑已经响应此空集的结果，调用此函数也会返回 0
+ * 				似乎返回0只能告诉你，此时调用 distdb_fetch_result 将不会阻塞。
+ *
+ * @retval    1 等待超时，试试看再次等待。如果已经等待足够长的时间，偶还是建议你放弃等待并视结果为空集
+ * @retval	 -1 等待时出现错误。 吼吼，偶建议您还是直接关闭句柄为妙。
+ *
+ * 永远无法从等待中恢复
+ *
+ * distdb 查询结果并不能立即出现，有时候会出现网络故障，直接调用 distdb_fetch_result 或许并不是一个好主意.
+ * 在试图获得结果前等待结果并设置超时绝对会是一个好主意。
+ *
+ */
+int distdb_wait_result(struct DISTDB_SQL_RESULT * in ,int waitflag,time_t timeout);
 
 /**
  * @brief 释放一次查询操作
@@ -306,7 +333,7 @@ int distdb_rpc_fetch_result(struct DISTDB_SQL_RESULT * in ,char ** result[]);
  * distdb_rpc_execute_sql_bin 返回的查询结果必须被释放，否者将引起服务器端和本地库的内存泄漏
  * 将来的实现将会避免没有释放的句柄耗尽服务器内存。但是，强烈建议你释放掉它.
  */
-int distdb_rpc_free_result(struct DISTDB_SQL_RESULT *in);
+int distdb_free_result(struct DISTDB_SQL_RESULT *in);
 
 __END_DECLS
 

@@ -98,7 +98,7 @@ static int execsql(struct DISTDB_SQL_RESULT* res,const char * sql,int byte)
 
 	if (sqlite3_get_table(forout->pdb, sql, &result, &row, &col, &errmsg) == SQLITE_OK)
 	{
-		forout->col = res->columns = col;
+		forout->col = res->colums = col;
 		forout->result = result;
 		forout->row = row;
 		forout->current = 1;
@@ -110,11 +110,6 @@ static int execsql(struct DISTDB_SQL_RESULT* res,const char * sql,int byte)
 		sqlite3_free(errmsg);
 	}
 	return -1;
-}
-
-static int get_result(struct DISTDB_SQL_RESULT* res)
-{
-	return 0;
 }
 
 static int fetch_row(struct DISTDB_SQL_RESULT * res,char*** reslut)
@@ -157,8 +152,6 @@ void __init()
 	struct db_ops * db = base->pdb;
 
 	db->db_exec_sql = execsql;
-
-	db->db_get_result = get_result;
 
 	db->db_peek_row = db->db_fetch_row = fetch_row; // 不需要，呵呵
 
