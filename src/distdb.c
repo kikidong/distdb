@@ -189,5 +189,10 @@ int distdb_execute_sql_bin(DISTDB_NODE * nodes,struct DISTDB_SQL_RESULT ** out,c
 
 }
 
-
+int distdb_wait_result(struct DISTDB_SQL_RESULT * in ,int waitflag,time_t timeout)
+{
+	pthread_mutex_lock(&in->lock);
+	pthread_cond_timedwait(&in->waitcond,&in->lock,0);
+	pthread_mutex_unlock(&in->lock);
+}
 

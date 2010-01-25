@@ -197,6 +197,16 @@ int main(int argc,char*argv[],char*env[])
 		printf("unable to read %s\n",cfg_progs.startup_node_file);
 		exit(EXIT_FAILURE);
 	}
-
+#ifndef DEBUG
+	daemon(0,0);
+#endif
 	//start to connect to nodes at idle time
+	while(sleep(rand()%20))
+	{
+		//connect to nodes, haha
+
+
+
+	}
+
 }

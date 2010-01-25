@@ -188,6 +188,15 @@ void distdb_initalize();
 int distdb_enable_server(struct distdb_info *__pdistdb_info,int retain);
 
 /**
+ * @brief 查询指定的节点是否连接
+ * @param[in] addr 节点的socket地址。
+ *
+ * 当前的实现是不允许一个节点发起2次连接的。所以，
+ */
+int distdb_is_node_connected(struct sockaddr_in * addr);
+
+
+/**
  * @brief 连接到指定的节点
  * @param[in] server 服务器的字符串
  *  		如果 server 指针为　NULL 表示连接本地服务。server 字符串可以使用
