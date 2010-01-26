@@ -63,10 +63,12 @@ int service_exec_sql(struct nodes* client, char * data, size_t * ret)
 		*ret = 0;
 		return 0;
 	}
+	if(result==NULL) //不要结果，偶这里也没有结果
+		return 0;
 	//fetch result and send back! 只获得本地结果，远程结果直接转发
 	while (distdb_fetch_result_local(result, &table) == 0)
 	{
-		ptext = convert_strtable2plain(result->columns, table);
+		ptext = convert_strtable2plain(result->colums, table);
 		db_hdr->type = db_exchange_type_return_result;
 		db_hdr->length = ptext->size + db_exchange_header_size;
 		send(client->sock_peer, db_hdr, db_exchange_header_size, MSG_NOSIGNAL);
@@ -104,9 +106,10 @@ static int service_accpet_result(struct nodes* client, char * data, size_t * ret
 		return 0;
 	}
 
+
 	res_plain = malloc(*ret);
 	res_plain->size = db_hdr->length - db_exchange_header_size;
-
+	result->colums = res_plain->colums;
 	memcpy(res_plain->plaindata,db_hdr->data,res_plain->size);
 	//挂入列队 ：）
 	LIST_ADDTOTAIL(&result->sql_result,&res_plain->resultlist);

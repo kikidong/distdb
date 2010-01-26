@@ -120,11 +120,12 @@ int distdb_execute_sql_bin(DISTDB_NODE * nodes,struct DISTDB_SQL_RESULT ** out,c
 	//制作步骤: 首先，您需要在本地查找(如果允许的话，呵呵) :)
 	if (!(executeflag & DISTDB_EXECSQL_NOLOCAL))
 	{
-		res->ref ++;
 		//本地查找
 		db.db_open(res, executeflag & DISTDB_RPC_EXECSQL_ALLOWRECURSIVE);
 
 		ret = db.db_exec_sql(res, sql, length);
+
+		res->last_table = calloc(res->colums,sizeof(char*));
 
 		if (ret)
 		{
@@ -181,5 +182,10 @@ int distdb_execute_sql_bin(DISTDB_NODE * nodes,struct DISTDB_SQL_RESULT ** out,c
 
 }
 
-
+int distdb_wait_result(struct DISTDB_SQL_RESULT * in ,int waitflag,time_t timeout)
+{
+	pthread_mutex_lock(&in->lock);
+	pthread_cond_timedwait(&in->waitcond,&in->lock,0);
+	pthread_mutex_unlock(&in->lock);
+}
 
