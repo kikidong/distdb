@@ -21,7 +21,6 @@
 
 #include <fcntl.h>
 #include <sqlite3.h>
-#include "../include/inifile.h"
 #include "../include/distdb.h"
 #include "../include/global_var.h"
 #include "../include/db_def.h"

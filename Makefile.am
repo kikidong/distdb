@@ -1,5 +1,5 @@
 
-AM_CFLAGS = -fPIC -fpic 
+AM_CFLAGS = -fPIC -fpic @GLIB_CFLAGS@ 
 
 SUBDIRS = include src init db doc
 

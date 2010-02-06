@@ -26,11 +26,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <dlfcn.h>
+#include <glib.h>
+#include <glib-object.h>
 
-#include "../include/inifile.h"
+#include "inifile.h"
 #include "prase.h"
 
-#include "../include/nodes.h"
 #include "../include/global_var.h"
 #include "../include/distdb.h"
 
@@ -61,14 +62,16 @@ struct cfg_progs
 	 * only of the file in the server is newer or local file collapse.
 	 */
 	char * url_nodefile;
-
-	/*
-	 *
-	 */
-
 }cfg_progs;
 
-struct distdb_info distdbinfo;
+typedef struct _NODES{
+	struct sockaddr_in peer;
+	int group;
+}NODE;
+
+
+static 	struct distdb_info distdbinfo = {0};
+static  GList * node_fromfile;
 
 static int getconfig(struct cfg_progs * cfg,int argc, char * argv[])
 {
@@ -173,8 +176,198 @@ static int download_node_file(const char * url,const char * file, int reason)
 	return reason;
 }
 
+/*
+ * scan nodes from line，push to a list
+ */
+static int nodesscanf( const char* line , void * ptr)
+{
+	int		s1,s2,s3,s4 ,port;
+
+	NODE * node_ptr = g_new(NODE,1);
+
+	switch(sscanf(line, "%d.%d.%d.%d:%d", &s1, &s2, &s3, &s4, &port))
+	{
+	case 4:
+		port = DISTDB_DEFAULT_PORT;
+	case 5:
+		node_ptr->peer.sin_family = AF_INET;
+		node_ptr->peer.sin_port = port;
+		node_ptr->peer.sin_addr.s_addr = MAKEINET(s1,s2,s3,s4);
+		ZEROWITHSIZE(node_ptr->peer.sin_zero);
+		node_fromfile = g_list_append(node_fromfile,node_ptr);
+		break;
+	default:
+		g_free(node_ptr);
+		return -1;
+	}
+	return 0;
+}
+
+
+/*
+ * seek to a chunk {}
+ */
+static int seek_chunk(FILE*file, const char * block)
+{
+	char	tmplate[1024];
+	size_t	n = 1024;
+	char*	linebuf = malloc(n);
+	char*	p;
+
+	size_t bytesread;
+
+	while (!feof(file) && (bytesread=getline(&linebuf, &n, file)) != -1)
+	{
+		p = linebuf;
+		while (*p == ' ' || *p == '\t' || *p=='\n')
+			++p;
+
+		if(*p=='#') continue;
+
+		if(strncmp(p, block, MIN(strlen(block),n- (p - linebuf))))
+			continue;
+		fseek(file, strlen(block) -bytesread , SEEK_CUR);
+		break;
+	}
+	free(linebuf);
+	return 0;
+}
+
+/*
+ * return 1 if broken file
+ */
+int check_node_file(const char * szfile)
+{
+	FILE * file = fopen(szfile,"r");
+
+	if (!file)
+		return 1; // cannot open ? broken!
+
+	// TODO : check the format
+
+
+	return 0;
+}
+
+/*
+ * chunk_read
+ */
+static int chunk_read(FILE* file,int (*_readline)(const char * line,void * userptr ), const char * userptr )
+{
+	size_t n = 4096;
+	int ret;
+	char * linebuf = malloc(4096);
+	char *p;
+	int found=0;
+
+	while (memset(linebuf, 0, 4096) && !feof(file) && getline(&linebuf, &n, file) != -1)
+	{
+		p = linebuf;
+		while (*p == ' ' || *p == '\t' || *p == '\n')
+			++p;
+		if (*p && *p!='#')
+		{
+			if(found == 0)
+			{
+				// seek "{"
+				if (*p != '{')
+				{
+					ret = -1;
+					break;
+				}else
+				{
+					found = 1;
+				}
+			}
+			else if (found == 1 && *p == '}')
+			{
+				ret = 0;
+				break;
+			}
+			else
+			{
+				if((ret = _readline(p,(void*)userptr)))
+					break;
+			}
+		}
+	}
+	free(linebuf);
+	return ret;
+
+}
+
+static int sscan_maps(const char * line , void * ptr)
+{
+	char * cuptr = * (char**) ptr;
+	int id;
+	char * name = cuptr;
+	if(sscanf(line,"%[^ \t]%d",name,&id)!=2)
+		return -1;
+	cuptr += strlen(name) + 1;
+	* (char**) ptr = cuptr ;
+
+	groupmap--;
+	groupmap->id = id;
+	groupmap->name = name;
+	groupcount++;
+	return 0;
+}
+
+/*
+ * read nodes into memory
+ */
+int read_nodes(const char * nodes_file)
+{
+	static char*	  groupmap_back_store;
+
+	int ret;
+	size_t n = 1024;
+	char * linebuf;
+	char * p;
+	int found;
+
+	char * cuptr ;
+
+		// open the file
+	FILE * nf = fopen(nodes_file, "r");
+	if (!nf)
+		return -1;
+	linebuf = malloc(n);
+
+	//read the group id to name map
+	seek_chunk(nf, "groupmap");
+	//
+
+	groupmap_back_store = malloc(4096);
+	cuptr = groupmap_back_store;
+	groupmap = (typeof(groupmap)) (groupmap_back_store+4096);
+
+	chunk_read(nf,sscan_maps,(void*)&cuptr);
+				// groupid to name map;
+				//char * p = groupmap_back_store;
+	// for every groupname, read the groups
+	int i;
+
+	for (i = 0; i < groupcount; ++i)
+	{
+		char	chunk[500];
+		int		id = groupmap[i].id ;
+		fseek(nf,0,0);
+
+		snprintf(chunk,499,"group %s",groupmap[i].name);
+
+		seek_chunk(nf,chunk);
+		chunk_read(nf,nodesscanf,0);
+	}
+
+	free(linebuf);
+	return ret;
+}
+
 int main(int argc,char*argv[],char*env[])
 {
+	node_fromfile = g_list_alloc();
+
 	getconfig(&cfg_progs, argc, argv);
 
 	if (download_node_file(cfg_progs.url_nodefile, cfg_progs.startup_node_file,
