@@ -209,6 +209,8 @@ int distdb_is_node_connected(struct sockaddr_in * addr);
  */
 DISTDB_NODE distdb_connect(const char* server);
 
+DISTDB_NODE distdb_connect_addr(struct sockaddr_in addr);
+
 /**
  * @brief 断开某个节点的连接
  * @param[in] node 服务器节点描述

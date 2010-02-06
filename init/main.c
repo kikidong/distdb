@@ -401,7 +401,10 @@ int main(int argc,char*argv[],char*env[])
 		for (ptr = g_list_first(node_fromfile); ptr; ptr = g_list_next(ptr))
 		{
 			NODE * pnode = (NODE*)ptr->data;
-			distdb_is_node_connected(&pnode->peer);
+			if(!(distdb_is_node_connected(&pnode->peer)))
+					{
+							;
+					}
 
 		}
 	}
