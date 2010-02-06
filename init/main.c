@@ -183,7 +183,7 @@ static int nodesscanf( const char* line , void * ptr)
 {
 	int		s1,s2,s3,s4 ,port;
 
-	NODE * node_ptr = g_new(NODE,1);
+	NODE * node_ptr = g_new0(NODE,1);
 
 	switch(sscanf(line, "%d.%d.%d.%d:%d", &s1, &s2, &s3, &s4, &port))
 	{
@@ -193,7 +193,6 @@ static int nodesscanf( const char* line , void * ptr)
 		node_ptr->peer.sin_family = AF_INET;
 		node_ptr->peer.sin_port = port;
 		node_ptr->peer.sin_addr.s_addr = MAKEINET(s1,s2,s3,s4);
-		ZEROWITHSIZE(node_ptr->peer.sin_zero);
 		node_fromfile = g_list_append(node_fromfile,node_ptr);
 		break;
 	default:
@@ -366,6 +365,7 @@ int read_nodes(const char * nodes_file)
 
 int main(int argc,char*argv[],char*env[])
 {
+	int i;
 	node_fromfile = g_list_alloc();
 
 	getconfig(&cfg_progs, argc, argv);
@@ -379,7 +379,6 @@ int main(int argc,char*argv[],char*env[])
 
 
 	distdb_initalize();
-
 
 	//Turn to server mode
 	distdb_enable_server(&distdbinfo,0);
@@ -396,10 +395,15 @@ int main(int argc,char*argv[],char*env[])
 	//start to connect to nodes at idle time
 	while(sleep(rand()%20))
 	{
+		GList * ptr;
+
 		//connect to nodes, haha
+		for (ptr = g_list_first(node_fromfile); ptr; ptr = g_list_next(ptr))
+		{
+			NODE * pnode = (NODE*)ptr->data;
+			distdb_is_node_connected(&pnode->peer);
 
-
-
+		}
 	}
 
 }

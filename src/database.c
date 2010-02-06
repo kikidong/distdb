@@ -26,7 +26,7 @@
 #define __DISTDB_SERVER_SIDE_H
 #include "../include/global_var.h"
 #include "../include/distdb.h"
-#include "../include/inifile.h"
+//#include "../include/inifile.h"
 #include "../include/db_def.h"
 #include "../include/communication.h"
 

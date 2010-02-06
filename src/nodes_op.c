@@ -168,3 +168,14 @@ void distdb_disconnect(DISTDB_NODE _node)
 	pthread_mutex_unlock(&nodelist_lock);
 }
 
+int distdb_is_node_connected(struct sockaddr_in * addr)
+{
+//	nod
+	struct list_node * n ;
+	for (n = nodelist.head; n != nodelist.tail->next; n = n->next)
+	{
+		if(SAME_PEER(&(LIST_HEAD(n,nodes,nodelist)->peer),addr))
+				return !0;
+	}
+	return 0;
+}
