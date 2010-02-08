@@ -400,12 +400,11 @@ int main(int argc,char*argv[],char*env[])
 		//connect to nodes, haha
 		for (ptr = g_list_first(node_fromfile); ptr; ptr = g_list_next(ptr))
 		{
-			NODE * pnode = (NODE*)ptr->data;
-			if(!(distdb_is_node_connected(&pnode->peer)))
-					{
-							;
-					}
-
+			NODE * pnode = (NODE*) ptr->data;
+			if (!(distdb_is_node_connected(&pnode->peer)))
+			{
+				distdb_connect_addr(pnode->peer);
+			}
 		}
 	}
 

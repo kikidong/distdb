@@ -209,6 +209,14 @@ int distdb_is_node_connected(struct sockaddr_in * addr);
  */
 DISTDB_NODE distdb_connect(const char* server);
 
+/**
+ * @brief 连接到指定的节点
+ * @param[in] addr 服务器sock地址
+ * @return DISTDB_NODE *
+ *
+ *
+ * @see distdb_connect
+ */
 DISTDB_NODE distdb_connect_addr(struct sockaddr_in addr);
 
 /**
