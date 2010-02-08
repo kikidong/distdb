@@ -73,18 +73,10 @@ static int distdb_login(struct nodes * node)
 	return 0;
 }
 
-DISTDB_NODE distdb_connect(const char* server)
+DISTDB_NODE distdb_connect_addr(struct sockaddr_in peer)
 {
 	int sock_peer;
-	struct sockaddr_in peer;
 	struct nodes * newnode;
-	//连接并登录
-	memset(peer.sin_zero, 0, sizeof(peer.sin_zero));
-
-	peer.sin_family = AF_INET;
-	peer.sin_port = DISTDB_DEFAULT_PORT;
-	peer.sin_addr.s_addr = resoveserver(server, &peer.sin_port);
-	peer.sin_port = htons(peer.sin_port);
 
 	pthread_mutex_lock(&nodelist_lock);
 	if (peer_lookup_same(peer.sin_addr.s_addr)) //已经连接的就不再重复连接
@@ -117,6 +109,24 @@ DISTDB_NODE distdb_connect(const char* server)
 		newnode->freeer(newnode);
 	}
 	return (DISTDB_NODE) newnode;
+
+}
+
+DISTDB_NODE distdb_connect(const char* server)
+{
+	int sock_peer;
+	struct sockaddr_in peer;
+	struct nodes * newnode;
+	//连接并登录
+	memset(peer.sin_zero, 0, sizeof(peer.sin_zero));
+
+	peer.sin_family = AF_INET;
+	peer.sin_port = DISTDB_DEFAULT_PORT;
+	peer.sin_addr.s_addr = resoveserver(server, &peer.sin_port);
+	peer.sin_port = htons(peer.sin_port);
+
+	return distdb_connect_addr(peer);
+
 }
 
 int open_nodes_socket()
@@ -165,3 +175,14 @@ void distdb_disconnect(DISTDB_NODE _node)
 	pthread_mutex_unlock(&nodelist_lock);
 }
 
+int distdb_is_node_connected(struct sockaddr_in * addr)
+{
+//	nod
+	struct list_node * n ;
+	for (n = nodelist.head; n != nodelist.tail->next; n = n->next)
+	{
+		if(SAME_PEER(&(LIST_HEAD(n,nodes,nodelist)->peer),addr))
+				return !0;
+	}
+	return 0;
+}

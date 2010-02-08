@@ -105,6 +105,10 @@ AS_IF([ test "x$with_mysql" != "xno" ],
 AM_CONDITIONAL([WITH_MYSQL], [ test "x$have_mysql" = "xyes" ] )
 
 
+PKG_CHECK_MODULES(GLIB, [
+    glib-2.0
+])
+
 # Checks for header files.
 
 # Checks for typedefs, structures, and compiler characteristics.

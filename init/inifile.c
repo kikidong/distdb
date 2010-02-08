@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../include/inifile.h"
+#include "inifile.h"
 
 int get_profile_string(FILE *fp, char *AppName,const char const *KeyName, char *KeyValue,size_t KEYVALLEN)
 {
